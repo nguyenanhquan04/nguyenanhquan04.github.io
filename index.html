@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Sửa tiêu đề/mô tả ở đây để link preview (Discord, Facebook...) hiển thị đúng -->
+  <title>my bio</title>
+  <meta name="description" content="Trang cá nhân của tôi: mạng xã hội, nhạc và hoạt động trực tiếp." />
+  <meta property="og:title" content="my bio" />
+  <meta property="og:description" content="Trang cá nhân của tôi: mạng xã hội, nhạc và hoạt động trực tiếp." />
+  <meta property="og:type" content="profile" />
+  <meta name="theme-color" content="#0b0b12" />
+  <link rel="icon" id="favicon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+<body>
+  <!-- Nền: video / ảnh / gradient + lớp hạt -->
+  <div class="bg" aria-hidden="true">
+    <div class="bg-aurora"></div>
+    <img class="bg-media" id="bg-image" alt="" hidden />
+    <video class="bg-media" id="bg-video" muted loop playsinline preload="auto" hidden></video>
+    <div class="bg-overlay"></div>
+    <canvas id="particles"></canvas>
+  </div>
+
+  <!-- Màn hình "nhấn để vào" (cần để trình duyệt cho phép phát nhạc) -->
+  <button class="enter" id="enter" type="button" hidden>
+    <span class="enter-text" id="enter-text">nhấn để vào</span>
+  </button>
+
+  <!-- Trình phát nhạc nhỏ -->
+  <div class="player" id="player" hidden>
+    <button class="player-btn" id="player-toggle" type="button" aria-label="Phát / tạm dừng">
+      <i class="fa-solid fa-play" id="player-icon"></i>
+    </button>
+    <div class="player-title" id="player-title-wrap"><span id="player-title"></span></div>
+    <i class="fa-solid fa-volume-high player-vol-icon" aria-hidden="true"></i>
+    <input class="player-vol" id="player-volume" type="range" min="0" max="1" step="0.01" aria-label="Âm lượng" />
+    <audio id="audio" loop preload="auto"></audio>
+  </div>
+
+  <main class="stage" id="stage">
+    <article class="card" id="card">
+      <header class="profile">
+        <div class="avatar-wrap">
+          <img class="avatar" id="avatar" alt="Ảnh đại diện" />
+          <img class="avatar-deco" id="avatar-deco" alt="" hidden />
+          <span class="status-dot" id="status-dot" hidden></span>
+        </div>
+
+        <h1 class="name" id="name"></h1>
+        <div class="badges" id="badges"></div>
+        <p class="meta" id="meta"></p>
+        <p class="bio"><span id="bio-text"></span><span class="caret" aria-hidden="true">|</span></p>
+      </header>
+
+      <nav class="socials" id="socials" aria-label="Mạng xã hội"></nav>
+
+      <section class="activity" id="activity" aria-label="Hoạt động"></section>
+
+      <section class="links" id="links" aria-label="Liên kết"></section>
+    </article>
+
+    <footer class="footer" id="footer"></footer>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="cursor" id="cursor" aria-hidden="true"></div>
+
+  <script src="assets/js/config.js"></script>
+  <script src="assets/js/main.js"></script>
+</body>
+</html>
