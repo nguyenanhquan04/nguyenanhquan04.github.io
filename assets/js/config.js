@@ -16,7 +16,6 @@ window.PROFILE = {
   // Các dòng giới thiệu, sẽ được gõ lần lượt (hiệu ứng máy đánh chữ)
   bio: [
     "xin chào 👋",
-    "sửa nội dung này trong assets/js/config.js",
     "code · music · games",
   ],
 
@@ -35,8 +34,8 @@ window.PROFILE = {
    * - Có thể ghi đè icon bằng "icon": "fa-brands fa-..."
    */
   socials: [
-    { type: "github", url: "https://github.com/nguyenanhquangramar" },
-    { type: "discord", copy: "ten_discord_cua_ban", label: "Discord (bấm để sao chép)" },
+    { type: "github", url: "https://github.com/nguyenanhquan04" },
+    // { type: "discord", copy: "ten_discord_cua_ban", label: "Discord (bấm để sao chép)" },
     // { type: "instagram", url: "https://instagram.com/..." },
     // { type: "tiktok", url: "https://tiktok.com/@..." },
     // { type: "youtube", url: "https://youtube.com/@..." },
@@ -56,7 +55,7 @@ window.PROFILE = {
     discordId: "",
     showDiscord: true,      // Thẻ trạng thái Discord + game/app đang dùng
     showSpotify: true,      // Thẻ bài hát Spotify đang nghe (lấy qua Discord)
-    github: "nguyenanhquangramar", // Tên tài khoản GitHub cho thẻ GitHub. Để trống để ẩn
+    github: "nguyenanhquan04", // Tên tài khoản GitHub cho thẻ GitHub. Để trống để ẩn
   },
 
   /* ---------- Nhạc nền ---------- */
