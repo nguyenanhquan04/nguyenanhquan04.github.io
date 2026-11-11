@@ -73,8 +73,8 @@ window.PROFILE = {
 
   /* ---------- Nhạc nền ---------- */
   music: {
-    src: "",                // ví dụ "assets/media/song.mp3". Để trống = không có nhạc
-    title: "",              // Tên bài hiển thị trên trình phát
+    src: "assets/media/Midnight - BEAST.mp3", // Để trống = không có nhạc
+    title: "Midnight - BEAST", // Tên bài hiển thị trên trình phát
     volume: 0.35,           // 0 → 1
   },
 
