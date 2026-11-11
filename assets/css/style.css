@@ -427,6 +427,60 @@ img { display: block; }
 
 .activity:empty { display: none; }
 
+/* ---------- Lover card ---------- */
+.lover {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  margin-top: 18px;
+}
+
+.lover:empty { display: none; }
+
+.acard.lcard {
+  --love: #ff5c8a;
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--love) 18%, transparent),
+    rgba(255, 255, 255, 0.03) 70%);
+  border-color: color-mix(in srgb, var(--love) 38%, transparent);
+  box-shadow: 0 0 28px color-mix(in srgb, var(--love) 14%, transparent);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+a.acard.lcard:hover,
+a.acard.lcard:focus-visible {
+  transform: translateY(-2px);
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--love) 26%, transparent),
+    rgba(255, 255, 255, 0.05) 70%);
+  box-shadow: 0 0 36px color-mix(in srgb, var(--love) 28%, transparent);
+  outline: none;
+}
+
+.lcard .acard-label { color: color-mix(in srgb, var(--love) 75%, #fff); }
+
+.lcard .acard-label .fa-heart {
+  color: var(--love);
+  animation: heartbeat 1.6s ease-in-out infinite;
+}
+
+.lcard .acard-fallback {
+  border-radius: 50%;
+  color: var(--love);
+  background: color-mix(in srgb, var(--love) 14%, transparent);
+}
+
+.lcard .acard-sub i { color: var(--faint); }
+.lcard .acard-sub .fa-spotify { color: var(--spotify); }
+.lcard .acard-sub .fa-discord { color: #5865f2; }
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  15% { transform: scale(1.28); }
+  30% { transform: scale(1); }
+  45% { transform: scale(1.18); }
+  60% { transform: scale(1); }
+}
+
 .acard {
   display: flex;
   align-items: center;

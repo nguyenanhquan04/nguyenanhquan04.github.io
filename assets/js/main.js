@@ -17,7 +17,19 @@
   const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
   const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 
-  const state = { discord: null, github: null };
+  const state = { discord: null, lover: null, github: null };
+
+  const validId = (v) => {
+    const id = String(v || "").trim();
+    if (!id) return "";
+    if (!/^\d{17,20}$/.test(id)) {
+      console.warn("[bio] Discord ID không hợp lệ (phải là dãy 17–20 chữ số):", id);
+      return "";
+    }
+    return id;
+  };
+  const ME_ID = validId(integ.discordId);
+  const LOVER_ID = validId(cfg.lover?.discordId);
 
   /* ------------------------------------------------------------------ */
   /* DOM helper: all dynamic text goes through textContent (no innerHTML) */
@@ -535,14 +547,15 @@
 
   const isSpotify = (a) => a.type === 2 && (a.name === "Spotify" || String(a.id || "").startsWith("spotify:"));
 
-  function cardShell({ href, media, label, labelIcon, body }) {
+  function cardShell({ href, media, label, labelIcon, body, extraClass = "" }) {
     const inner = [
       h("div", { class: "acard-media" }, media),
       h("div", { class: "acard-body" }, h("div", { class: "acard-label" }, icon(labelIcon), label), body),
     ];
+    const cls = `acard${extraClass ? ` ${extraClass}` : ""}`;
     const el = href
-      ? h("a", { class: "acard", href, target: "_blank", rel: "noopener noreferrer" }, inner)
-      : h("div", { class: "acard" }, inner);
+      ? h("a", { class: cls, href, target: "_blank", rel: "noopener noreferrer" }, inner)
+      : h("div", { class: cls }, inner);
     // Play the entrance animation once; re-renders of the same node won't replay it.
     el.addEventListener("animationend", () => (el.style.animation = "none"), { once: true });
     return el;
@@ -561,8 +574,8 @@
     return nodes;
   }
 
-  function buildDiscordCard(p) {
-    const u = p.discord_user;
+  // Custom status (emoji + text) if set, otherwise the plain online/idle/dnd/offline text.
+  function statusLine(p) {
     const custom = (p.activities || []).find((a) => a.type === 4);
     const sub = h("div", { class: "acard-sub" });
     if (custom && (custom.state || custom.emoji)) {
@@ -580,6 +593,12 @@
     } else {
       sub.textContent = STATUS_TEXT[p.discord_status] || STATUS_TEXT.offline;
     }
+    return sub;
+  }
+
+  function buildDiscordCard(p) {
+    const u = p.discord_user;
+    const sub = statusLine(p);
 
     return cardShell({
       href: `https://discord.com/users/${u.id}`,
@@ -661,6 +680,71 @@
     });
   }
 
+  /* Lover card: live Discord presence when Lanyard tracks the ID, otherwise a static link card. */
+  function loverActivityLine(p) {
+    if (p.listening_to_spotify && p.spotify) {
+      const artist = String(p.spotify.artist || "").replace(/;/g, ",");
+      return h("div", { class: "acard-sub" }, icon("fa-brands fa-spotify"), ` ${p.spotify.song} – ${artist}`);
+    }
+    const a = (p.activities || []).find((x) => x.type !== 4 && !isSpotify(x));
+    if (!a) return null;
+    return h(
+      "div",
+      { class: "acard-sub" },
+      icon(a.type === 1 ? "fa-solid fa-tower-broadcast" : "fa-solid fa-gamepad"),
+      ` ${ACTIVITY_VERB[a.type] || "Đang dùng"} ${a.name}`
+    );
+  }
+
+  function buildLoverCard() {
+    const lv = cfg.lover || {};
+    const p = state.lover;
+    const u = p?.discord_user;
+    const username = u?.username || lv.username || "";
+    const name = lv.name || u?.global_name || u?.display_name || username || "♥";
+
+    const media = p
+      ? mediaImg(discordAvatar(u, 128), {
+          round: true,
+          small: h("span", { class: "mini-dot", "data-status": p.discord_status || "offline" }),
+          fallbackIcon: "fa-solid fa-heart",
+        })
+      : mediaImg(null, { fallbackIcon: "fa-solid fa-heart" });
+
+    return cardShell({
+      href: `https://discord.com/users/${LOVER_ID}`,
+      extraClass: "lcard",
+      media,
+      label: lv.label || "Người yêu tôi",
+      labelIcon: "fa-solid fa-heart",
+      body: [
+        h("div", { class: "acard-title" }, name, username && username !== name ? h("small", {}, `@${username}`) : null),
+        p ? statusLine(p) : h("div", { class: "acard-sub" }, icon("fa-brands fa-discord"), " Xem hồ sơ Discord"),
+        p ? loverActivityLine(p) : null,
+      ],
+    });
+  }
+
+  let loverSig = null;
+  function renderLover() {
+    const box = $("#lover");
+    if (!LOVER_ID) {
+      box.replaceChildren();
+      return;
+    }
+    const p = state.lover;
+    const u = p?.discord_user;
+    const custom = p?.activities?.find((a) => a.type === 4);
+    const act = p?.activities?.find((a) => a.type !== 4 && !isSpotify(a));
+    const sig = JSON.stringify([
+      u?.avatar, u?.global_name, u?.username, p?.discord_status, custom?.state, custom?.emoji,
+      p?.listening_to_spotify && p?.spotify?.track_id, act?.type, act?.name,
+    ]);
+    if (sig === loverSig) return;
+    loverSig = sig;
+    box.replaceChildren(buildLoverCard());
+  }
+
   // Keyed render: a card is rebuilt only when its data changed.
   const cardCache = new Map();
 
@@ -735,41 +819,49 @@
   /* ------------------------------------------------------------------ */
   /* Data sources                                                        */
   /* ------------------------------------------------------------------ */
+  // Routes a Lanyard presence to the owner or the lover by Discord user ID.
   function setPresence(data) {
-    if (!data || !data.discord_user) return;
-    state.discord = data;
-    renderProfile();
-    renderActivity();
+    const id = data?.discord_user?.id || data?.user_id;
+    if (!id || !data.discord_user) return;
+    if (id === ME_ID) {
+      state.discord = data;
+      renderProfile();
+      renderActivity();
+    } else if (id === LOVER_ID) {
+      state.lover = data;
+      renderLover();
+    }
   }
 
-  async function loadDiscord() {
-    const id = String(integ.discordId || "").trim();
-    if (!id) return;
-    if (!/^\d{17,20}$/.test(id)) {
-      console.warn("[bio] discordId không hợp lệ (phải là dãy 17–20 chữ số):", id);
-      return;
-    }
-
-    let monitored = true;
+  // Returns false only when Lanyard says the user is not tracked (no point subscribing).
+  async function fetchPresence(id) {
     try {
       const res = await fetch(`https://api.lanyard.rest/v1/users/${id}`);
       const json = await res.json();
       if (json.success) {
         setPresence(json.data);
-      } else {
-        monitored = false;
-        console.warn(
-          `[bio] Lanyard: ${json.error?.message || "không tìm thấy người dùng"}.`,
-          "Hãy tham gia server Lanyard để hiện trạng thái Discord: https://discord.gg/UrXF2cfJ7F"
-        );
+        return true;
       }
+      console.warn(
+        `[bio] Lanyard (${id}): ${json.error?.message || "không tìm thấy người dùng"}.`,
+        "Tham gia server Lanyard để hiện trạng thái Discord: https://discord.gg/UrXF2cfJ7F"
+      );
+      return false;
     } catch (err) {
-      console.warn("[bio] Không gọi được Lanyard REST, thử WebSocket:", err);
+      console.warn(`[bio] Không gọi được Lanyard REST (${id}), thử WebSocket:`, err);
+      return true;
     }
-    if (monitored) connectLanyard(id, 0);
   }
 
-  function connectLanyard(id, attempt) {
+  async function loadDiscord() {
+    const ids = [...new Set([ME_ID, LOVER_ID].filter(Boolean))];
+    if (!ids.length) return;
+    const tracked = await Promise.all(ids.map(fetchPresence));
+    const live = ids.filter((_, i) => tracked[i]);
+    if (live.length) connectLanyard(live, 0);
+  }
+
+  function connectLanyard(ids, attempt) {
     let ws;
     let heartbeat;
     try {
@@ -785,20 +877,23 @@
         return;
       }
       if (msg.op === 1) {
-        ws.send(JSON.stringify({ op: 2, d: { subscribe_to_id: id } }));
+        ws.send(JSON.stringify({ op: 2, d: { subscribe_to_ids: ids } }));
         clearInterval(heartbeat);
         heartbeat = setInterval(() => {
           if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ op: 3 }));
         }, msg.d?.heartbeat_interval || 30000);
         attempt = 0;
-      } else if (msg.op === 0 && (msg.t === "INIT_STATE" || msg.t === "PRESENCE_UPDATE")) {
+      } else if (msg.op === 0 && msg.t === "INIT_STATE") {
+        // With subscribe_to_ids, INIT_STATE is a map of user ID -> presence.
+        Object.values(msg.d || {}).forEach(setPresence);
+      } else if (msg.op === 0 && msg.t === "PRESENCE_UPDATE") {
         setPresence(msg.d);
       }
     });
     ws.addEventListener("close", () => {
       clearInterval(heartbeat);
       const delay = Math.min(30000, 2000 * 2 ** attempt);
-      setTimeout(() => connectLanyard(id, attempt + 1), delay);
+      setTimeout(() => connectLanyard(ids, attempt + 1), delay);
     });
   }
 
@@ -889,6 +984,7 @@
   setupBackground();
   renderStatic();
   renderProfile();
+  renderLover();
   setupTilt();
   setupCursor();
   startTitle();

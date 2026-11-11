@@ -34,12 +34,12 @@ window.PROFILE = {
    * - Có thể ghi đè icon bằng "icon": "fa-brands fa-..."
    */
   socials: [
+    { type: "discord", copy: "_veritas.haze", label: "Discord: _veritas.haze (bấm để sao chép)" },
+    { type: "tiktok", url: "https://www.tiktok.com/@arli_flawless", label: "TikTok: @arli_flawless" },
+    { type: "facebook", url: "https://www.facebook.com/veritas.haze", label: "Facebook" },
     { type: "github", url: "https://github.com/nguyenanhquan04" },
-    // { type: "discord", copy: "ten_discord_cua_ban", label: "Discord (bấm để sao chép)" },
     // { type: "instagram", url: "https://instagram.com/..." },
-    // { type: "tiktok", url: "https://tiktok.com/@..." },
     // { type: "youtube", url: "https://youtube.com/@..." },
-    // { type: "facebook", url: "https://facebook.com/..." },
     // { type: "email", url: "mailto:ban@example.com" },
   ],
 
@@ -52,10 +52,23 @@ window.PROFILE = {
   integrations: {
     // Discord User ID (Cài đặt > Nâng cao > bật Developer Mode, rồi chuột phải vào tên > Copy User ID).
     // BẮT BUỘC: tham gia server Lanyard https://discord.gg/UrXF2cfJ7F thì trạng thái mới hiện.
-    discordId: "",
+    discordId: "109027621051871232",
     showDiscord: true,      // Thẻ trạng thái Discord + game/app đang dùng
     showSpotify: true,      // Thẻ bài hát Spotify đang nghe (lấy qua Discord)
     github: "nguyenanhquan04", // Tên tài khoản GitHub cho thẻ GitHub. Để trống để ẩn
+  },
+
+  /* ---------- Thẻ người yêu ----------
+   * Hiện trạng thái Discord trực tiếp của người ấy (online, custom status, đang nghe/chơi gì).
+   * Người ấy cũng phải tham gia server Lanyard thì trạng thái mới hiện;
+   * nếu chưa, thẻ vẫn hiện tên và link tới hồ sơ Discord.
+   * Xoá discordId (để "") để ẩn thẻ này.
+   */
+  lover: {
+    label: "Người yêu tôi",
+    discordId: "1379346205212934144",
+    username: "eswan_17",
+    name: "",               // Tên hiển thị. Để trống = lấy tên Discord của người ấy
   },
 
   /* ---------- Nhạc nền ---------- */

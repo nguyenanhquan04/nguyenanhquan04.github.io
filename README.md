@@ -45,6 +45,12 @@ Trang dùng [Lanyard](https://github.com/Phineas/lanyard) để đọc trạng t
 
 Thẻ Spotify hiện khi bạn đã liên kết Spotify với Discord và bật "Hiển thị Spotify làm trạng thái".
 
+Khi Lanyard có dữ liệu, tên và avatar trên trang sẽ lấy từ Discord. Muốn giữ cố định thì điền `name` và `avatar` trong `config.js`.
+
+### Thẻ "Người yêu tôi"
+
+Mục `lover` trong `config.js` hiện một thẻ màu hồng với trạng thái Discord trực tiếp của người ấy: online/offline, custom status, bài đang nghe hoặc game đang chơi. Người ấy cũng phải tham gia server Lanyard ở trên. Nếu chưa tham gia, thẻ chỉ hiện tên và link tới hồ sơ Discord. Để `discordId: ""` nếu muốn ẩn thẻ.
+
 ### Thêm nhạc nền / video nền
 
 Chép file vào `assets/media/` rồi ghi đường dẫn vào config:
