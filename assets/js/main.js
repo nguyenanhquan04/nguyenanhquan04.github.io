@@ -120,71 +120,188 @@
       img.src = b.image;
       img.hidden = false;
     }
-    if (!reduceMotion && (b.particles === "stars" || b.particles === "snow")) {
-      startParticles(b.particles);
+    // The dim layer is only for photo/video backgrounds; the night sky is already dark.
+    $(".bg-overlay").hidden = !(b.video || b.image);
+
+    if (b.particles === "snow") {
+      if (!reduceMotion) startSnow();
+    } else if (b.particles === "stars") {
+      startSky({ shooting: b.shootingStars !== false, still: reduceMotion });
     }
   }
 
-  function startParticles(kind) {
+  // Shared canvas sizing (CSS px, capped device-pixel ratio) with debounced resize.
+  function canvas2d(onResize) {
     const canvas = $("#particles");
     const ctx = canvas.getContext("2d");
-    const snow = kind === "snow";
-    let w = 0;
-    let hgt = 0;
-    let parts = [];
-
-    const make = (initial) => ({
-      x: Math.random() * w,
-      y: initial ? Math.random() * hgt : -10,
-      r: snow ? 0.8 + Math.random() * 2.2 : 0.35 + Math.random() * 1.25,
-      vx: snow ? (Math.random() - 0.5) * 0.3 : (Math.random() - 0.5) * 0.06,
-      vy: snow ? 0.3 + Math.random() * 0.8 : (Math.random() - 0.5) * 0.06,
-      tw: 0.0006 + Math.random() * 0.0018,
-      phase: Math.random() * Math.PI * 2,
-    });
-
+    if (!ctx) return null;
+    const size = { w: 0, h: 0 };
     function resize() {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      w = canvas.clientWidth;
-      hgt = canvas.clientHeight;
-      canvas.width = Math.round(w * dpr);
-      canvas.height = Math.round(hgt * dpr);
+      size.w = canvas.clientWidth || window.innerWidth;
+      size.h = canvas.clientHeight || window.innerHeight;
+      canvas.width = Math.round(size.w * dpr);
+      canvas.height = Math.round(size.h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const count = Math.round(Math.min(160, (w * hgt) / (snow ? 9000 : 9500)));
-      parts = Array.from({ length: count }, () => make(true));
+      onResize(size);
+    }
+    let timer;
+    window.addEventListener("resize", () => {
+      clearTimeout(timer);
+      timer = setTimeout(resize, 150);
+    });
+    resize();
+    return { ctx, size };
+  }
+
+  // Night sky: twinkling stars of different sizes/colours, and every few seconds a shooting star.
+  function startSky({ shooting = true, still = false } = {}) {
+    const COLORS = ["255,255,255", "255,255,255", "255,255,255", "214,228,255", "255,238,214", "232,222,255"];
+    const rand = (a, b) => a + Math.random() * (b - a);
+    let stars = [];
+    let meteors = [];
+    let nextMeteor = 0;
+    let last = 0;
+    let ctx = null;
+    let size = null;
+
+    const c = canvas2d(({ w, h }) => {
+      const count = Math.round(clamp((w * h) / 4200, 80, 380));
+      stars = Array.from({ length: count }, () => {
+        const bright = Math.random() < 0.06;
+        return {
+          x: Math.random() * w,
+          y: Math.random() * h,
+          r: bright ? rand(1.1, 1.8) : rand(0.3, 1.05),
+          c: COLORS[Math.floor(Math.random() * COLORS.length)],
+          base: bright ? rand(0.75, 1) : rand(0.25, 0.75),
+          amp: rand(0.15, 0.5),
+          speed: rand(0.0005, 0.0022),
+          phase: Math.random() * Math.PI * 2,
+          bright,
+        };
+      });
+      if (still && ctx) drawStars(0); // redraw the static sky after a resize
+    });
+    if (!c) return;
+    ({ ctx, size } = c);
+
+    function dot(x, y, r, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function drawStars(t) {
+      if (still) ctx.clearRect(0, 0, size.w, size.h);
+      for (const s of stars) {
+        const a = still ? s.base : clamp(s.base + Math.sin(s.phase + t * s.speed) * s.amp, 0.05, 1);
+        dot(s.x, s.y, s.r, `rgba(${s.c},${a.toFixed(3)})`);
+        if (s.bright) dot(s.x, s.y, s.r * 3.4, `rgba(${s.c},${(a * 0.16).toFixed(3)})`); // soft halo
+      }
+    }
+
+    function spawnMeteor() {
+      const dir = Math.random() < 0.5 ? -1 : 1;
+      const angle = rand(0.3, 0.62); // 17°–35° below horizontal
+      const speed = rand(0.9, 1.5) * (Math.max(size.w, size.h) / 1000); // px per ms, scaled to the screen
+      meteors.push({
+        x: rand(size.w * 0.15, size.w * 0.85),
+        y: rand(0, size.h * 0.45),
+        vx: Math.cos(angle) * speed * dir,
+        vy: Math.sin(angle) * speed,
+        len: rand(110, 230),
+        life: 0,
+        ttl: rand(700, 1300),
+      });
+    }
+
+    function drawMeteors(dt) {
+      for (let i = meteors.length - 1; i >= 0; i -= 1) {
+        const m = meteors[i];
+        m.life += dt;
+        m.x += m.vx * dt;
+        m.y += m.vy * dt;
+        const p = m.life / m.ttl;
+        if (p >= 1) {
+          meteors.splice(i, 1);
+          continue;
+        }
+        const fade = p < 0.15 ? p / 0.15 : 1 - (p - 0.15) / 0.85; // quick fade-in, long fade-out
+        const sp = Math.hypot(m.vx, m.vy) || 1;
+        const tx = m.x - (m.vx / sp) * m.len;
+        const ty = m.y - (m.vy / sp) * m.len;
+        const g = ctx.createLinearGradient(m.x, m.y, tx, ty);
+        g.addColorStop(0, `rgba(255,255,255,${(0.95 * fade).toFixed(3)})`);
+        g.addColorStop(0.3, `rgba(200,220,255,${(0.45 * fade).toFixed(3)})`);
+        g.addColorStop(1, "rgba(200,220,255,0)");
+        ctx.strokeStyle = g;
+        ctx.lineWidth = 1.6;
+        ctx.lineCap = "round";
+        ctx.beginPath();
+        ctx.moveTo(m.x, m.y);
+        ctx.lineTo(tx, ty);
+        ctx.stroke();
+        dot(m.x, m.y, 5, `rgba(210,225,255,${(0.22 * fade).toFixed(3)})`); // head glow
+        dot(m.x, m.y, 1.6, `rgba(255,255,255,${fade.toFixed(3)})`);
+      }
+    }
+
+    if (still) {
+      drawStars(0); // reduced motion: static stars only
+      return;
     }
 
     function frame(t) {
-      ctx.clearRect(0, 0, w, hgt);
-      ctx.fillStyle = "#fff";
-      for (const p of parts) {
-        p.x += p.vx;
-        p.y += p.vy;
-        if (snow) {
-          p.x += Math.sin(t / 1400 + p.phase) * 0.2;
-          if (p.y > hgt + 10) Object.assign(p, make(false));
-          ctx.globalAlpha = 0.7;
-        } else {
-          if (p.x < -5) p.x = w + 5;
-          if (p.x > w + 5) p.x = -5;
-          if (p.y < -5) p.y = hgt + 5;
-          if (p.y > hgt + 5) p.y = -5;
-          ctx.globalAlpha = 0.15 + 0.85 * (0.5 + 0.5 * Math.sin(p.phase + t * p.tw));
+      const dt = last ? Math.min(t - last, 50) : 16; // clamp after a hidden tab resumes
+      last = t;
+      ctx.clearRect(0, 0, size.w, size.h);
+      drawStars(t);
+      if (shooting) {
+        if (!nextMeteor) nextMeteor = t + rand(1500, 4000);
+        if (t >= nextMeteor) {
+          spawnMeteor();
+          // now and then two in a row
+          nextMeteor = t + (Math.random() < 0.15 ? rand(250, 600) : rand(3500, 9000));
         }
+        drawMeteors(dt);
+      }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function startSnow() {
+    let flakes = [];
+    const make = (w, h, initial) => ({
+      x: Math.random() * w,
+      y: initial ? Math.random() * h : -10,
+      r: 0.8 + Math.random() * 2.2,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: 0.3 + Math.random() * 0.8,
+      phase: Math.random() * Math.PI * 2,
+    });
+    const c = canvas2d(({ w, h }) => {
+      const count = Math.round(Math.min(160, (w * h) / 9000));
+      flakes = Array.from({ length: count }, () => make(w, h, true));
+    });
+    if (!c) return;
+    const { ctx, size } = c;
+
+    (function frame(t) {
+      ctx.clearRect(0, 0, size.w, size.h);
+      ctx.fillStyle = "rgba(255,255,255,0.7)";
+      for (const p of flakes) {
+        p.x += p.vx + Math.sin(t / 1400 + p.phase) * 0.2;
+        p.y += p.vy;
+        if (p.y > size.h + 10) Object.assign(p, make(size.w, size.h, false));
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
         ctx.fill();
       }
       requestAnimationFrame(frame);
-    }
-
-    let resizeTimer;
-    window.addEventListener("resize", () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(resize, 150);
-    });
-    resize();
-    requestAnimationFrame(frame);
+    })(0);
   }
 
   /* ------------------------------------------------------------------ */

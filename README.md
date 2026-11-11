@@ -5,7 +5,7 @@ Trang bio-link tĩnh, chỉ dùng HTML/CSS/JS thuần, không cần build. Chạ
 ## Tính năng
 
 - Màn hình "nhấn để vào" (để trình duyệt cho phép tự phát nhạc)
-- Nền video, ảnh hoặc gradient động, kèm hiệu ứng sao lấp lánh hoặc tuyết rơi
+- Nền bầu trời đêm có dải ngân hà, sao lấp lánh và thỉnh thoảng có sao băng (hoặc tuyết rơi, video, ảnh)
 - Thẻ kính mờ nghiêng 3D theo chuột, con trỏ phát sáng
 - Avatar có chấm trạng thái Discord và khung trang trí avatar (nếu bạn có)
 - Tên phát sáng / gradient, huy hiệu có tooltip, bio gõ chữ tự động, tiêu đề tab tự gõ

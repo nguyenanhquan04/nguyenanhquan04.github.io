@@ -117,8 +117,9 @@ window.PROFILE = {
   background: {
     video: "",              // ví dụ "assets/media/bg.mp4" (ưu tiên hơn ảnh)
     image: "",              // ví dụ "assets/media/bg.jpg" hoặc một URL
-    dim: 0.5,               // Độ tối phủ lên nền, 0 → 1
-    particles: "stars",     // "stars" | "snow" | "none"
+    dim: 0.5,               // Độ tối phủ lên video/ảnh nền, 0 → 1 (không áp dụng cho bầu trời sao)
+    particles: "stars",     // "stars" = bầu trời sao | "snow" = tuyết rơi | "none"
+    shootingStars: true,    // Thỉnh thoảng có sao băng (khi particles = "stars")
   },
 
   /* ---------- Giao diện & hiệu ứng ---------- */

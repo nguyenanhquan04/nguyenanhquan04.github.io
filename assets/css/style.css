@@ -52,22 +52,33 @@ img { display: block; }
   overflow: hidden;
 }
 
-.bg-aurora {
+/* Night sky: deep blue fading up to near-black, faint nebula tints and a glow at the horizon */
+.bg-sky {
   position: absolute;
-  inset: -20%;
+  inset: 0;
   background:
-    radial-gradient(40% 35% at 20% 25%, color-mix(in srgb, var(--accent) 38%, transparent), transparent 70%),
-    radial-gradient(35% 30% at 80% 70%, color-mix(in srgb, var(--accent2) 30%, transparent), transparent 70%),
-    radial-gradient(30% 30% at 60% 15%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 70%),
-    #07070c;
-  filter: blur(40px);
-  animation: aurora 22s ease-in-out infinite alternate;
+    radial-gradient(75% 45% at 50% 112%, rgba(96, 82, 196, 0.38), transparent 70%),
+    radial-gradient(40% 35% at 12% 18%, color-mix(in srgb, var(--accent) 13%, transparent), transparent 70%),
+    radial-gradient(35% 30% at 88% 32%, color-mix(in srgb, var(--accent2) 10%, transparent), transparent 70%),
+    linear-gradient(180deg, #02030a 0%, #060a1c 38%, #0b1030 72%, #151b45 100%);
 }
 
-@keyframes aurora {
-  0%   { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
-  50%  { transform: translate3d(3%, -2%, 0) rotate(6deg) scale(1.05); }
-  100% { transform: translate3d(-3%, 3%, 0) rotate(-4deg) scale(1.02); }
+/* Milky Way: a soft diagonal band of light that drifts very slowly */
+.bg-milkyway {
+  position: absolute;
+  inset: -30%;
+  background:
+    radial-gradient(ellipse 16% 58% at 50% 50%, rgba(196, 190, 255, 0.11), transparent 70%),
+    radial-gradient(ellipse 8% 44% at 52% 45%, rgba(255, 236, 246, 0.08), transparent 70%),
+    radial-gradient(ellipse 11% 30% at 47% 60%, rgba(150, 172, 255, 0.08), transparent 70%);
+  filter: blur(22px);
+  transform: rotate(-35deg);
+  animation: milky-drift 140s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes milky-drift {
+  to { transform: rotate(-30deg) translateX(3%); }
 }
 
 .bg-media {
