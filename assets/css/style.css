@@ -29,6 +29,10 @@
 
 * { box-sizing: border-box; }
 
+/* animatable fade stops for the side walls of the deck */
+@property --fs { syntax: "<percentage>"; inherits: false; initial-value: 100%; }
+@property --fc { syntax: "<percentage>"; inherits: false; initial-value: 100%; }
+
 html, body { margin: 0; }
 
 body {
@@ -149,11 +153,14 @@ img { display: block; }
 
 /* ---------- Layout: 3-panel deck ---------- */
 .stage {
-  --pw: 400px;                                         /* panel width */
+  --pw: 400px;                                         /* panel width = one wall of the hexagon */
   --ph: clamp(560px, calc(100dvh - 150px), 800px);     /* panel height */
-  --side-x: 430px;                                     /* side panel offset from centre */
-  --side-rot: 30deg;                                   /* side panels angle toward the viewer */
-  --side-z: -40px;
+  /* Hexagonal room: each wall sits `apothem` away from the centre (√3/2 of a wall's width).
+     The camera stands just behind the centre, so the front wall shows at its real size,
+     the side walls share its edges (same height there) and their outer edges reach almost
+     level with the camera, growing past the edge of the screen. */
+  --apothem: calc(var(--pw) * 0.8660254);
+  --persp: var(--pw);
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -189,8 +196,9 @@ img { display: block; }
   position: relative;
   width: 100%;
   height: var(--ph);
-  perspective: 1500px;
-  perspective-origin: 50% 40%;
+  z-index: 1;
+  perspective: var(--persp);
+  perspective-origin: 50% 50%;
   touch-action: pan-y;
 }
 
@@ -198,10 +206,7 @@ img { display: block; }
 .panel {
   --mx: 50%;
   --my: 50%;
-  --x: 0px;
-  --rot: 0deg;
-  --z: 0px;
-  --s: 1;
+  --ang: 0deg;   /* wall angle around the room, set by JS: +60 left · 0 front · -60 right */
   --b: 1;
   position: absolute;
   top: 0;
@@ -221,12 +226,14 @@ img { display: block; }
     inset 0 1px 0 rgba(255, 255, 255, 0.06);
   opacity: 0;
   filter: brightness(var(--b));
-  transform: translateX(var(--x)) translateZ(var(--z)) rotateY(var(--rot)) scale(var(--s));
+  /* step to the room's centre, turn to this wall, step back out to the wall */
+  transform: translateZ(var(--apothem)) rotateY(var(--ang)) translateZ(calc(-1 * var(--apothem)));
   transition:
-    transform 0.85s cubic-bezier(0.22, 0.85, 0.25, 1),
-    filter 0.85s ease,
+    transform 0.9s cubic-bezier(0.45, 0.05, 0.25, 1),
+    filter 0.9s ease,
     opacity 0.6s ease,
-    box-shadow 0.85s ease;
+    --fs 0.9s ease,
+    --fc 0.9s ease;
   will-change: transform;
 }
 
@@ -236,15 +243,22 @@ img { display: block; }
 
 .panel[data-offset="-1"],
 .panel[data-offset="1"] {
-  --s: 0.94;
-  --z: var(--side-z);
-  --b: 0.62;
+  --b: 0.72;
+  --fs: 6%;    /* mask: solid up to here (from the inner edge)... */
+  --fc: 58%;   /* ...and fully faded by here, before the wall leaves the screen */
   z-index: 2;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  box-shadow: none;
 }
 
-.panel[data-offset="-1"] { --x: calc(-1 * var(--side-x)); --rot: var(--side-rot); }
-.panel[data-offset="1"] { --x: var(--side-x); --rot: calc(-1 * var(--side-rot)); }
+/* Side walls fade out toward their outer edge. data-fade stays on while a wall turns to the
+   front (so the fade can animate back to solid) and is removed once it has landed. */
+.panel[data-fade] {
+  -webkit-mask-image: linear-gradient(var(--fdir), #000 var(--fs), transparent var(--fc));
+  mask-image: linear-gradient(var(--fdir), #000 var(--fs), transparent var(--fc));
+}
+
+.panel[data-fade="left"] { --fdir: to left; }
+.panel[data-fade="right"] { --fdir: to right; }
 
 /* a side panel lights up a little under the pointer to show it can be clicked */
 .panel.is-hover { --b: 0.85; }
@@ -2227,23 +2241,18 @@ html.love-open { overflow: hidden; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 1180px) {
-  .stage { --pw: 360px; --side-x: 330px; --side-rot: 32deg; }
+  .stage { --pw: 360px; }
 }
 
-/* Tablets and phones: one card in front, the other two tucked behind it at an angle and
-   peeking out at the edges. Swipe or use the tabs to switch. */
+/* Tablets and phones: the same room, narrower walls; the side walls show as slivers at the
+   edges. Swipe or use the tabs to turn. */
 @media (max-width: 960px) {
   .stage {
-    --pw: min(440px, calc(100vw - 56px));
-    --side-x: calc(var(--pw) * 0.81);
-    --side-rot: 50deg;
-    --side-z: -80px;
+    --pw: min(440px, calc(100vw - 72px));
     --ph: clamp(520px, calc(100dvh - 110px), 780px);
     gap: 12px;
     padding: 12px 0 16px;
   }
-  .panel[data-offset="-1"],
-  .panel[data-offset="1"] { --b: 0.5; }
 }
 
 @media (max-width: 560px) {

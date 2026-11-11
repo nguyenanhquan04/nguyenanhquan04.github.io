@@ -868,7 +868,9 @@
   const deck = (() => {
     const deckEl = $("#deck");
     const nav = $("#deck-nav");
+    const WALL = 60; // degrees between walls of a hexagonal room
     let panels = [];
+    let angles = []; // each panel's angle around the room; grows without wrapping so turns stay continuous
     let active = 0;
     let tabs = [];
 
@@ -881,18 +883,31 @@
       return d === 0 ? 0 : d === 1 ? 1 : -1;
     }
 
-    function layout(animateWrap) {
+    // step: +1 = turn toward the right-hand wall, -1 = toward the left, 0 = initial placement.
+    // In CSS a positive rotateY swings a wall to the left, so the left wall sits at +60° and the
+    // right wall at -60°. Turning right raises every angle by 60°; with three panels, the wall
+    // leaving the left edge keeps turning the same way around the back of the room (240°) and
+    // comes back in on the right.
+    function layout(step) {
       panels.forEach((p, i) => {
-        const before = p.dataset.offset;
-        const off = String(offsetOf(i));
-        // With three panels, the one jumping from one side to the other would sweep across the
-        // front; fade it out and back in instead.
-        if (animateWrap && before && before !== "0" && off !== "0" && before !== off && !reduceMotion) {
-          p.animate([{ opacity: 1 }, { opacity: 0, offset: 0.35 }, { opacity: 0, offset: 0.65 }, { opacity: 1 }], { duration: 850, easing: "ease" });
+        const off = offsetOf(i);
+        const target = -off * WALL;
+        if (!step || angles[i] == null) {
+          angles[i] = target;
+        } else {
+          let d = (((target - angles[i]) % 360) + 360) % 360; // 0..359 turning the + way
+          if (step < 0 && d) d -= 360; // turning left: go the - way instead
+          if (Math.abs(d) > WALL && !reduceMotion) {
+            // passing behind the camera: hide it while it is out of view
+            p.animate([{ opacity: 1 }, { opacity: 0, offset: 0.28 }, { opacity: 0, offset: 0.72 }, { opacity: 1 }], { duration: 900 });
+          }
+          angles[i] += d;
         }
-        p.dataset.offset = off;
-        p.inert = off !== "0";
-        p.setAttribute("aria-hidden", off !== "0" ? "true" : "false");
+        p.style.setProperty("--ang", `${angles[i]}deg`);
+        p.dataset.offset = String(off);
+        if (off !== 0) p.dataset.fade = off < 0 ? "left" : "right";
+        p.inert = off !== 0;
+        p.setAttribute("aria-hidden", off !== 0 ? "true" : "false");
       });
       tabs.forEach((t, i) => t.setAttribute("aria-current", String(i === active)));
     }
@@ -902,21 +917,22 @@
       const n = panels.length;
       const next = ((i % n) + n) % n;
       if (next === active) return;
+      const step = offsetOf(next); // the target is always one wall to the left (-1) or right (+1)
       active = next;
-      layout(true);
+      layout(step);
       if (focus) setTimeout(() => panels[active].querySelector(".panel-scroll")?.focus({ preventScroll: true }), 50);
     }
 
-    // which side panel (if any) lies under a point, ignoring the front one
+    // Which side wall lies under a point: left of the front panel = left wall, right of it =
+    // right wall. (The side walls' bounding boxes are huge because their outer edges reach
+    // almost to the camera, so they can't be hit-tested by rectangle.)
     function sidePanelAt(x, y) {
       const front = panels[active].getBoundingClientRect();
-      if (x >= front.left && x <= front.right && y >= front.top && y <= front.bottom) return -1;
-      for (let i = 0; i < panels.length; i += 1) {
-        if (i === active) continue;
-        const r = panels[i].getBoundingClientRect();
-        if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return i;
-      }
-      return -1;
+      const deckBox = deckEl.getBoundingClientRect();
+      if (y < deckBox.top || y > deckBox.bottom) return -1;
+      const want = x < front.left ? -1 : x > front.right ? 1 : 0;
+      if (!want) return -1;
+      return panels.findIndex((_, i) => offsetOf(i) === want);
     }
 
     function init() {
@@ -935,7 +951,14 @@
           )
         : [];
       nav.replaceChildren(...tabs);
-      layout(false);
+      layout(0);
+
+      // once a wall has turned to the front, drop its fade mask (it is fully solid by then)
+      panels.forEach((p) =>
+        p.addEventListener("transitionend", (e) => {
+          if (e.target === p && e.propertyName === "transform" && p.dataset.offset === "0") delete p.dataset.fade;
+        })
+      );
 
       // Side panels are inert, so clicks land on the deck itself: work out which one was hit.
       deckEl.addEventListener("click", (e) => {
