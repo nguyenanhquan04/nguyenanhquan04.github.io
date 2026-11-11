@@ -69,6 +69,15 @@ window.PROFILE = {
     discordId: "1379346205212934144",
     username: "eswan_17",
     name: "",               // Tên hiển thị. Để trống = lấy tên Discord của người ấy
+
+    // Trang riêng màu hồng kem, mở khi bấm vào thẻ (link thẳng: nguyenanhquan.tech/#love).
+    // Đặt page: false để thẻ mở hồ sơ Discord như cũ. Mục nào để trống sẽ được ẩn.
+    page: {
+      since: "",            // Ngày bắt đầu yêu, dạng "2025-02-14" → hiện bộ đếm "bên nhau X ngày"
+      letterTitle: "Gửi em",
+      message: "",          // Lời nhắn. Xuống dòng bằng \n
+      photos: [],           // Ảnh: ["assets/media/anh1.jpg", "assets/media/anh2.jpg"]
+    },
   },
 
   /* ---------- Trình phát nhạc (playlist, đĩa xoay) ----------

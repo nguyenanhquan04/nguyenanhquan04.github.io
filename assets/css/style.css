@@ -481,6 +481,17 @@ a.acard.lcard:focus-visible {
   60% { transform: scale(1); }
 }
 
+.lcard-go {
+  flex: none;
+  margin-left: 4px;
+  color: color-mix(in srgb, var(--love) 70%, #fff);
+  font-size: 0.85rem;
+  transition: transform 0.2s ease;
+}
+
+a.lcard:hover .lcard-go,
+a.lcard:focus-visible .lcard-go { transform: translateX(3px); }
+
 .acard {
   display: flex;
   align-items: center;
@@ -1086,6 +1097,529 @@ a.acard:hover { background: var(--surface-hover); }
 /* touch devices control volume with hardware buttons (iOS ignores audio.volume) */
 @media (hover: none), (pointer: coarse) {
   .vol-range { display: none; }
+}
+
+/* =====================================================================
+   Lover page (#love) — cream-pink theme
+   ===================================================================== */
+html.love-open { overflow: hidden; }
+
+.love {
+  --l-bg1: #fff8f3;
+  --l-bg2: #ffeef2;
+  --l-bg3: #ffe1e9;
+  --l-pink: #f59ab5;
+  --l-pink-deep: #df7898;
+  --l-ink: #6b3a4b;
+  --l-ink-soft: #a07685;
+  --l-card: rgba(255, 255, 255, 0.62);
+  --l-line: rgba(236, 140, 168, 0.28);
+  --l-shadow: rgba(224, 120, 154, 0.16);
+
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  color: var(--l-ink);
+  font-family: "Quicksand", "Outfit", system-ui, sans-serif;
+  background: linear-gradient(165deg, var(--l-bg1) 0%, var(--l-bg2) 50%, var(--l-bg3) 100%);
+  clip-path: circle(0px at var(--ox, 50%) var(--oy, 22%));
+  transition: clip-path 0.85s cubic-bezier(0.7, 0, 0.25, 1);
+}
+
+.love.is-open { clip-path: circle(150vmax at var(--ox, 50%) var(--oy, 22%)); }
+
+/* background stays put while the content scrolls */
+.love-bg {
+  position: sticky;
+  top: 0;
+  z-index: 0;
+  height: 100dvh;
+  margin-bottom: -100dvh;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.love-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(50px);
+  opacity: 0.75;
+  animation: blob 18s ease-in-out infinite alternate;
+}
+
+.love-blob.b1 { top: -90px; left: -90px; width: 340px; height: 340px; background: #ffc8d6; }
+.love-blob.b2 { right: -70px; bottom: -70px; width: 320px; height: 320px; background: #ffe0cc; animation-delay: -6s; }
+.love-blob.b3 { top: 38%; left: 58%; width: 240px; height: 240px; background: #fbd0e6; animation-delay: -12s; }
+
+@keyframes blob {
+  to { transform: translate(40px, 30px) scale(1.12); }
+}
+
+.love-heart {
+  position: absolute;
+  bottom: -40px;
+  animation: heart-up linear infinite;
+}
+
+@keyframes heart-up {
+  0% { transform: translate(0, 0) rotate(-12deg); }
+  50% { transform: translate(var(--sway, 20px), -55vh) rotate(12deg); }
+  100% { transform: translate(0, -115vh) rotate(-12deg); }
+}
+
+.love-inner {
+  position: relative;
+  z-index: 1;
+  width: min(560px, 100%);
+  margin: 0 auto;
+  padding: 20px 18px 48px;
+}
+
+.love-top { display: flex; }
+
+.love-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 16px;
+  border: 1px solid var(--l-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.75);
+  color: var(--l-ink);
+  font: 600 0.9rem "Quicksand", system-ui, sans-serif;
+  cursor: pointer;
+  box-shadow: 0 6px 18px var(--l-shadow);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.love-back:hover,
+.love-back:focus-visible {
+  transform: translateX(-2px);
+  box-shadow: 0 0 0 2px var(--l-pink), 0 8px 22px var(--l-shadow);
+  outline: none;
+}
+
+/* hero */
+.love-hero {
+  position: relative;
+  padding: 30px 0 6px;
+  text-align: center;
+  animation: love-rise 0.8s 0.25s ease both;
+}
+
+@keyframes love-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+.love-moon {
+  position: absolute;
+  top: 0;
+  right: 4%;
+  width: 92px;
+  height: 92px;
+  pointer-events: none;
+}
+
+.moon {
+  position: absolute;
+  inset: 14px;
+  border-radius: 50%;
+  box-shadow: inset -14px 8px 0 0 #ffd0dc;
+  filter: drop-shadow(0 0 14px rgba(245, 154, 181, 0.6));
+  transform: rotate(-18deg);
+  animation: moon-float 6s ease-in-out infinite;
+}
+
+@keyframes moon-float {
+  50% { transform: rotate(-12deg) translateY(-5px); }
+}
+
+.sparkle {
+  position: absolute;
+  color: var(--l-pink);
+  font-style: normal;
+  line-height: 1;
+  animation: twinkle 2.6s ease-in-out infinite;
+}
+
+.sparkle.s1 { top: 0; left: 4px; font-size: 11px; }
+.sparkle.s2 { top: 30px; right: -6px; font-size: 8px; animation-delay: -0.8s; }
+.sparkle.s3 { bottom: 2px; left: 18px; font-size: 9px; animation-delay: -1.5s; }
+.sparkle.s4 { bottom: 18px; right: 10px; font-size: 6px; animation-delay: -2s; }
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0.25; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+
+.love-avatar-wrap {
+  position: relative;
+  width: 132px;
+  height: 132px;
+  margin: 0 auto;
+}
+
+.love-avatar {
+  width: 100%;
+  height: 100%;
+  border: 5px solid #fff;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #ffe4ea;
+  box-shadow: 0 12px 34px rgba(224, 120, 154, 0.35), 0 0 0 9px rgba(245, 154, 181, 0.18);
+}
+
+.love-deco {
+  position: absolute;
+  top: -12%;
+  left: -12%;
+  width: 124%;
+  height: 124%;
+  pointer-events: none;
+}
+
+.love-dot {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  width: 24px;
+  height: 24px;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  background: var(--offline);
+}
+
+.love-dot[data-status="online"] { background: var(--online); }
+.love-dot[data-status="idle"] { background: var(--idle); }
+.love-dot[data-status="dnd"] { background: var(--dnd); }
+
+.love-kicker {
+  margin: 20px 0 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--l-pink-deep);
+}
+
+.love-name {
+  margin: 0;
+  font-family: "Dancing Script", cursive;
+  font-size: clamp(2.5rem, 9vw, 3.3rem);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--l-pink-deep);
+  text-shadow: 0 2px 0 #fff, 0 10px 26px rgba(224, 120, 154, 0.3);
+  word-break: break-word;
+}
+
+.love-handle {
+  margin: 2px 0 0;
+  font-size: 0.92rem;
+  color: var(--l-ink-soft);
+}
+
+.love-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  margin: 16px 0 0;
+  padding: 9px 16px;
+  border-radius: 18px 18px 18px 5px;
+  background: #fff;
+  box-shadow: 0 6px 18px var(--l-shadow);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.love-status img.emoji {
+  display: inline-block;
+  width: 1.25em;
+  height: 1.25em;
+  margin-right: 2px;
+}
+
+/* cards */
+.love-card {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 22px;
+  background: var(--l-card);
+  box-shadow: 0 10px 30px var(--l-shadow);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  animation: love-rise 0.8s 0.4s ease both;
+}
+
+.love-card-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--l-pink-deep);
+}
+
+/* couple */
+.couple-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+}
+
+.couple-p {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 40%;
+  margin: 0;
+}
+
+.couple-p img {
+  width: 72px;
+  height: 72px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #ffe4ea;
+  box-shadow: 0 6px 16px rgba(224, 120, 154, 0.25);
+}
+
+.couple-p figcaption {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 0.88rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.couple-heart {
+  margin-bottom: 26px;
+  color: var(--l-pink);
+  font-size: 1.7rem;
+  filter: drop-shadow(0 4px 10px rgba(245, 154, 181, 0.5));
+  animation: heartbeat 1.6s ease-in-out infinite;
+}
+
+.love-days {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--l-line);
+}
+
+.days-num {
+  font-family: "Dancing Script", cursive;
+  font-size: 3.2rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--l-pink-deep);
+}
+
+.days-label { font-weight: 700; }
+
+.days-since {
+  margin-top: 2px;
+  font-size: 0.8rem;
+  color: var(--l-ink-soft);
+}
+
+.love-sync {
+  margin: 14px 0 0;
+  font-size: 0.88rem;
+  text-align: center;
+  color: var(--l-ink-soft);
+}
+
+.love-sync i { color: var(--l-pink-deep); }
+
+/* what she's doing */
+.now-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: inherit;
+}
+
+.now-item + .now-item {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--l-line);
+}
+
+.now-img {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  object-fit: cover;
+  background: #ffe4ea;
+  box-shadow: 0 4px 12px var(--l-shadow);
+}
+
+.now-fallback {
+  display: grid;
+  place-items: center;
+  color: var(--l-pink-deep);
+  font-size: 1.4rem;
+}
+
+.now-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.now-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--l-ink-soft);
+}
+
+.now-label .fa-spotify { color: #1db954; }
+
+.now-title,
+.now-sub {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.now-title { font-weight: 700; }
+
+.now-sub {
+  font-size: 0.86rem;
+  color: var(--l-ink-soft);
+}
+
+.love .progress { background: rgba(224, 120, 154, 0.18); }
+.love .progress-bar { background: var(--l-pink); }
+.love .times { color: var(--l-ink-soft); }
+
+/* letter */
+.love-letter {
+  position: relative;
+  padding: 22px 22px 16px;
+  background:
+    repeating-linear-gradient(transparent 0 31px, rgba(245, 154, 181, 0.2) 31px 32px),
+    #fffaf6;
+  background-position: 0 58px;
+}
+
+.letter-stamp {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  color: var(--l-pink);
+  font-size: 1.2rem;
+  transform: rotate(12deg);
+}
+
+.letter-title {
+  margin: 0 0 6px;
+  font-family: "Dancing Script", cursive;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--l-pink-deep);
+}
+
+.letter-body p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 32px;
+}
+
+.letter-sign {
+  margin: 8px 0 0;
+  font-family: "Dancing Script", cursive;
+  font-size: 1.4rem;
+  text-align: right;
+  color: var(--l-pink-deep);
+}
+
+/* photos */
+.love-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.polaroid {
+  margin: 0;
+  padding: 8px 8px 24px;
+  border-radius: 6px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(107, 58, 75, 0.15);
+  transform: rotate(var(--r, 0deg));
+  transition: transform 0.25s ease;
+}
+
+.polaroid:hover { transform: rotate(0deg) scale(1.04); }
+
+.polaroid img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 3px;
+  object-fit: cover;
+}
+
+/* actions + footer */
+.love-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.love-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 22px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f7a8bf, #ec84a5);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 10px 24px rgba(224, 120, 154, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.love-btn:hover,
+.love-btn:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--l-pink), 0 12px 28px rgba(224, 120, 154, 0.4);
+  outline: none;
+}
+
+.love-foot {
+  margin-top: 22px;
+  font-size: 0.8rem;
+  text-align: center;
+  color: var(--l-ink-soft);
+}
+
+.love-foot i { color: var(--l-pink); }
+
+/* the glowing cursor is invisible on a light background with blend mode "screen" */
+.love-open .cursor {
+  mix-blend-mode: normal;
+  background: radial-gradient(circle, rgba(245, 154, 181, 0.5), transparent 70%);
 }
 
 /* ---------- Footer, toast, cursor ---------- */

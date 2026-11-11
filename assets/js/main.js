@@ -30,6 +30,8 @@
   };
   const ME_ID = validId(integ.discordId);
   const LOVER_ID = validId(cfg.lover?.discordId);
+  // Clicking the lover card opens her own page (#love) unless page: false.
+  const LOVE_PAGE = !!LOVER_ID && cfg.lover?.page !== false;
 
   /* ------------------------------------------------------------------ */
   /* DOM helper: all dynamic text goes through textContent (no innerHTML) */
@@ -690,7 +692,7 @@
     let dir = 1;
     let hold = 0;
     setInterval(() => {
-      const text = graphemes(displayName());
+      const text = graphemes(love.titleText() || displayName());
       if (hold > 0) {
         hold -= 1;
         return;
@@ -792,14 +794,16 @@
 
   const isSpotify = (a) => a.type === 2 && (a.name === "Spotify" || String(a.id || "").startsWith("spotify:"));
 
-  function cardShell({ href, media, label, labelIcon, body, extraClass = "" }) {
+  function cardShell({ href, media, label, labelIcon, body, extraClass = "", newTab = true, trailing = null }) {
     const inner = [
       h("div", { class: "acard-media" }, media),
       h("div", { class: "acard-body" }, h("div", { class: "acard-label" }, icon(labelIcon), label), body),
+      trailing,
     ];
     const cls = `acard${extraClass ? ` ${extraClass}` : ""}`;
+    const linkProps = newTab ? { target: "_blank", rel: "noopener noreferrer" } : {};
     const el = href
-      ? h("a", { class: cls, href, target: "_blank", rel: "noopener noreferrer" }, inner)
+      ? h("a", { class: cls, href, ...linkProps }, inner)
       : h("div", { class: cls }, inner);
     // Play the entrance animation once; re-renders of the same node won't replay it.
     el.addEventListener("animationend", () => (el.style.animation = "none"), { once: true });
@@ -956,18 +960,23 @@
         })
       : mediaImg(null, { fallbackIcon: "fa-solid fa-heart" });
 
-    return cardShell({
-      href: `https://discord.com/users/${LOVER_ID}`,
+    const card = cardShell({
+      href: LOVE_PAGE ? "#love" : `https://discord.com/users/${LOVER_ID}`,
+      newTab: !LOVE_PAGE,
       extraClass: "lcard",
       media,
       label: lv.label || "Người yêu tôi",
       labelIcon: "fa-solid fa-heart",
       body: [
         h("div", { class: "acard-title" }, name, username && username !== name ? h("small", {}, `@${username}`) : null),
-        p ? statusLine(p) : h("div", { class: "acard-sub" }, icon("fa-brands fa-discord"), " Xem hồ sơ Discord"),
+        p ? statusLine(p) : h("div", { class: "acard-sub" }, icon("fa-brands fa-discord"), LOVE_PAGE ? " Bấm để xem trang của cô ấy" : " Xem hồ sơ Discord"),
         p ? loverActivityLine(p) : null,
       ],
+      trailing: LOVE_PAGE ? h("span", { class: "lcard-go", "aria-hidden": "true" }, icon("fa-solid fa-chevron-right")) : null,
     });
+    // Remember where the click happened so the pink page can grow out of that point.
+    if (LOVE_PAGE) card.addEventListener("click", (e) => love.setOrigin(e.clientX, e.clientY));
+    return card;
   }
 
   let loverSig = null;
@@ -989,6 +998,337 @@
     loverSig = sig;
     box.replaceChildren(buildLoverCard());
   }
+
+  /* ------------------------------------------------------------------ */
+  /* Lover page (#love): full-screen cream-pink view over the bio page.  */
+  /* Lives in the same document so the music keeps playing.             */
+  /* ------------------------------------------------------------------ */
+  const love = (() => {
+    const noop = { init() {}, render() {}, setOrigin() {}, titleText: () => "" };
+    if (!LOVE_PAGE) return noop;
+
+    const lv = cfg.lover || {};
+    const pg = lv.page && typeof lv.page === "object" ? lv.page : {};
+    const view = $("#love-view");
+    const back = $("#love-back");
+    let isOpen = false;
+    let fromHistory = false; // opened by an in-page click, so a history entry exists to go back to
+    let closeTimer;
+    let heartsMade = false;
+    let galleryMade = false;
+    let coupleSig = null;
+    let nowSig = null;
+
+    const herName = () => {
+      const u = state.lover?.discord_user;
+      return lv.name || u?.global_name || u?.display_name || u?.username || lv.username || "Người ấy";
+    };
+
+    function setOrigin(x, y) {
+      view.style.setProperty("--ox", `${Math.round(x)}px`);
+      view.style.setProperty("--oy", `${Math.round(y)}px`);
+    }
+
+    function heartAvatar() {
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffd8e1"/><stop offset="1" stop-color="#f59ab5"/></linearGradient></defs><rect width="120" height="120" fill="url(#g)"/><path d="M60 90C28 70 24 51 35 41c9-8 20-5 25 5 5-10 16-13 25-5 11 10 7 29-25 49z" fill="#fff" opacity=".92"/></svg>`;
+      return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+    }
+
+    function setImg(img, src, fallback) {
+      if (img.getAttribute("src") === src) return;
+      img.onerror = fallback
+        ? () => {
+            img.onerror = null;
+            img.src = fallback;
+          }
+        : null;
+      img.src = src;
+    }
+
+    function makeHearts() {
+      if (heartsMade || reduceMotion) return;
+      heartsMade = true;
+      const colors = ["#f59ab5", "#f7b4c6", "#ffc4ad", "#ee86a6", "#ffd3de"];
+      const box = $("#love-hearts");
+      for (let i = 0; i < 18; i += 1) {
+        const el = h("i", { class: "fa-solid fa-heart love-heart" });
+        el.style.cssText = [
+          `left:${(Math.random() * 100).toFixed(1)}%`,
+          `font-size:${(10 + Math.random() * 18).toFixed(0)}px`,
+          `color:${colors[i % colors.length]}`,
+          `opacity:${(0.35 + Math.random() * 0.4).toFixed(2)}`,
+          `animation-duration:${(11 + Math.random() * 10).toFixed(1)}s`,
+          `animation-delay:${(-Math.random() * 20).toFixed(1)}s`,
+          `--sway:${(Math.random() * 60 - 30).toFixed(0)}px`,
+        ].join(";");
+        box.append(el);
+      }
+    }
+
+    function parseDate(s) {
+      const m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(String(s || "").trim());
+      if (!m) return null;
+      const d = new Date(+m[1], +m[2] - 1, +m[3]);
+      return Number.isNaN(d.getTime()) ? null : d;
+    }
+
+    function statusNodes(p) {
+      const c = (p.activities || []).find((a) => a.type === 4);
+      if (!c || !(c.state || c.emoji)) return [STATUS_TEXT[p.discord_status] || STATUS_TEXT.offline];
+      const nodes = [];
+      const e = c.emoji;
+      if (e?.id) {
+        nodes.push(h("img", { class: "emoji", alt: e.name || "", src: `https://cdn.discordapp.com/emojis/${e.id}.${e.animated ? "gif" : "png"}?size=48` }));
+      } else if (e?.name) {
+        nodes.push(`${e.name} `);
+      }
+      if (c.state) nodes.push(c.state);
+      return nodes;
+    }
+
+    function renderHero() {
+      const p = state.lover;
+      const u = p?.discord_user;
+      setImg($("#love-avatar"), u ? discordAvatar(u, 256) : heartAvatar(), heartAvatar());
+
+      const deco = $("#love-deco");
+      const asset = u?.avatar_decoration_data?.asset;
+      if (asset) {
+        setImg(deco, `https://cdn.discordapp.com/avatar-decoration-presets/${asset}.png?size=240&passthrough=true`);
+        deco.hidden = false;
+      } else {
+        deco.hidden = true;
+      }
+
+      const dot = $("#love-dot");
+      dot.hidden = !p;
+      if (p) dot.dataset.status = p.discord_status || "offline";
+
+      $("#love-kicker").textContent = `người yêu của ${displayName()}`;
+      $("#love-name").textContent = herName();
+      const username = u?.username || lv.username || "";
+      $("#love-handle").textContent = username ? `@${username}` : "";
+
+      const status = $("#love-status");
+      if (p) status.replaceChildren(...statusNodes(p));
+      status.hidden = !p;
+    }
+
+    function renderCouple() {
+      const me = state.discord;
+      const her = state.lover;
+      const since = parseDate(pg.since);
+      const sameSong =
+        me?.listening_to_spotify && her?.listening_to_spotify && me.spotify?.track_id && me.spotify.track_id === her.spotify?.track_id
+          ? her.spotify
+          : null;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const sig = JSON.stringify([avatarUrl(), displayName(), herName(), her?.discord_user?.avatar, since && since.getTime(), today.getTime(), sameSong?.track_id]);
+      if (sig === coupleSig) return;
+      coupleSig = sig;
+
+      const person = (src, name) => {
+        const img = h("img", { src, alt: "", loading: "lazy" });
+        img.addEventListener("error", () => (img.src = heartAvatar()), { once: true });
+        return h("figure", { class: "couple-p" }, img, h("figcaption", {}, name));
+      };
+      const herAvatar = her?.discord_user ? discordAvatar(her.discord_user, 128) : heartAvatar();
+
+      const nodes = [
+        h(
+          "div",
+          { class: "couple-row" },
+          person(avatarUrl(), displayName()),
+          h("div", { class: "couple-heart", "aria-hidden": "true" }, icon("fa-solid fa-heart")),
+          person(herAvatar, herName())
+        ),
+      ];
+
+      if (since && since <= today) {
+        const days = Math.floor((today - since) / 86400000) + 1;
+        const dd = String(since.getDate()).padStart(2, "0");
+        const mm = String(since.getMonth() + 1).padStart(2, "0");
+        nodes.push(
+          h(
+            "div",
+            { class: "love-days" },
+            h("span", { class: "days-num" }, days.toLocaleString("vi-VN")),
+            h("span", { class: "days-label" }, "ngày bên nhau"),
+            h("span", { class: "days-since" }, icon("fa-solid fa-calendar-days"), ` từ ${dd}/${mm}/${since.getFullYear()}`)
+          )
+        );
+      }
+
+      if (sameSong) {
+        const artist = String(sameSong.artist || "").replace(/;/g, ",");
+        nodes.push(h("p", { class: "love-sync" }, icon("fa-solid fa-headphones"), ` Hai đứa đang nghe cùng một bài: ${sameSong.song} – ${artist}`));
+      }
+
+      $("#love-couple").replaceChildren(...nodes);
+    }
+
+    function renderNow() {
+      const box = $("#love-now");
+      const p = state.lover;
+      const sp = p?.listening_to_spotify ? p.spotify : null;
+      const acts = (p?.activities || []).filter((a) => a.type !== 4 && !isSpotify(a));
+      const sig = JSON.stringify([sp?.track_id, sp?.timestamps, acts.map((a) => [a.name, a.details, a.state, a.timestamps?.start, a.assets])]);
+      if (sig === nowSig) return;
+      nowSig = sig;
+
+      const items = [];
+      const media = (src, fallbackIcon) => {
+        if (!src) return h("div", { class: "now-img now-fallback" }, icon(fallbackIcon));
+        const img = h("img", { class: "now-img", src, alt: "", loading: "lazy" });
+        img.addEventListener("error", () => img.replaceWith(h("div", { class: "now-img now-fallback" }, icon(fallbackIcon))), { once: true });
+        return img;
+      };
+
+      if (sp) {
+        const start = sp.timestamps?.start;
+        const end = sp.timestamps?.end;
+        items.push(
+          h(
+            "a",
+            { class: "now-item", href: sp.track_id ? `https://open.spotify.com/track/${encodeURIComponent(sp.track_id)}` : null, target: "_blank", rel: "noopener noreferrer" },
+            media(sp.album_art_url, "fa-brands fa-spotify"),
+            h(
+              "div",
+              { class: "now-body" },
+              h("div", { class: "now-label" }, icon("fa-brands fa-spotify"), " Đang nghe Spotify"),
+              h("div", { class: "now-title" }, sp.song),
+              h("div", { class: "now-sub" }, String(sp.artist || "").replace(/;/g, ",")),
+              start && end
+                ? h(
+                    "div",
+                    { "data-sp-start": start, "data-sp-end": end },
+                    h("div", { class: "progress" }, h("div", { class: "progress-bar" })),
+                    h("div", { class: "times" }, h("span", { class: "t-cur" }, "0:00"), h("span", {}, fmtTime(end - start)))
+                  )
+                : null
+            )
+          )
+        );
+      }
+
+      acts.forEach((a) => {
+        const start = a.timestamps?.start;
+        items.push(
+          h(
+            "div",
+            { class: "now-item" },
+            media(assetUrl(a.application_id, a.assets?.large_image), a.type === 1 ? "fa-solid fa-tower-broadcast" : "fa-solid fa-gamepad"),
+            h(
+              "div",
+              { class: "now-body" },
+              h("div", { class: "now-label" }, icon(a.type === 1 ? "fa-solid fa-tower-broadcast" : "fa-solid fa-gamepad"), ` ${ACTIVITY_VERB[a.type] || "Đang dùng"}`),
+              h("div", { class: "now-title" }, a.name),
+              a.details ? h("div", { class: "now-sub" }, a.details) : null,
+              a.state ? h("div", { class: "now-sub" }, a.state) : null,
+              start ? h("div", { class: "now-sub now-elapsed", "data-since": start }, "") : null
+            )
+          )
+        );
+      });
+
+      box.hidden = !items.length;
+      box.replaceChildren(h("h3", { class: "love-card-title" }, icon("fa-solid fa-heart"), " Cô ấy đang làm gì"), ...items);
+      tickTimers();
+    }
+
+    function renderLetter() {
+      const box = $("#love-letter");
+      const text = String(pg.message || "").trim();
+      box.hidden = !text;
+      if (!text) return;
+      box.replaceChildren(
+        h("span", { class: "letter-stamp", "aria-hidden": "true" }, icon("fa-solid fa-heart")),
+        h("h3", { class: "letter-title" }, pg.letterTitle || "Gửi em"),
+        h("div", { class: "letter-body" }, text.split(/\n+/).map((line) => h("p", {}, line))),
+        h("p", { class: "letter-sign" }, `— ${displayName()}`)
+      );
+    }
+
+    function renderGallery() {
+      if (galleryMade) return;
+      galleryMade = true;
+      const photos = (Array.isArray(pg.photos) ? pg.photos : []).filter(Boolean);
+      const box = $("#love-gallery");
+      box.hidden = !photos.length;
+      box.replaceChildren(
+        ...photos.map((src, i) => {
+          const fig = h("figure", { class: "polaroid", style: `--r:${(i % 2 ? 1 : -1) * (1.5 + (i % 3))}deg` }, h("img", { src, alt: "", loading: "lazy" }));
+          fig.querySelector("img").addEventListener("error", () => fig.remove(), { once: true });
+          return fig;
+        })
+      );
+    }
+
+    function render() {
+      if (!isOpen) return;
+      renderHero();
+      renderCouple();
+      renderNow();
+      $("#love-discord").href = `https://discord.com/users/${LOVER_ID}`;
+      $("#love-foot").replaceChildren("made with ", icon("fa-solid fa-heart"), ` by ${displayName()}`);
+    }
+
+    function open() {
+      if (isOpen) return;
+      isOpen = true;
+      clearTimeout(closeTimer);
+      view.hidden = false;
+      view.scrollTop = 0;
+      makeHearts();
+      renderLetter();
+      renderGallery();
+      render();
+      document.documentElement.classList.add("love-open");
+      $("#stage").inert = true;
+      // two frames so the closed clip-path is painted before the transition starts
+      requestAnimationFrame(() => requestAnimationFrame(() => view.classList.add("is-open")));
+      setTimeout(() => back.focus({ preventScroll: true }), 60);
+    }
+
+    function close() {
+      if (!isOpen) return;
+      isOpen = false;
+      view.classList.remove("is-open");
+      document.documentElement.classList.remove("love-open");
+      $("#stage").inert = false;
+      closeTimer = setTimeout(() => (view.hidden = true), reduceMotion ? 0 : 850);
+      document.querySelector("#lover .acard")?.focus({ preventScroll: true });
+    }
+
+    const sync = () => (location.hash === "#love" ? open() : close());
+
+    back.addEventListener("click", () => {
+      if (fromHistory) {
+        history.back();
+      } else {
+        // opened from a shared link: drop the hash without leaving the site
+        history.replaceState(null, "", location.pathname + location.search);
+        close();
+      }
+    });
+    document.addEventListener("keydown", (e) => {
+      if (isOpen && e.key === "Escape") back.click();
+    });
+
+    return {
+      init() {
+        window.addEventListener("hashchange", () => {
+          fromHistory = true;
+          sync();
+        });
+        sync();
+      },
+      render,
+      setOrigin,
+      titleText: () => (isOpen ? `♡ ${herName()}` : ""),
+    };
+  })();
 
   // Keyed render: a card is rebuilt only when its data changed.
   const cardCache = new Map();
@@ -1076,6 +1416,7 @@
       state.lover = data;
       renderLover();
     }
+    love.render();
   }
 
   // Returns false only when Lanyard says the user is not tracked (no point subscribing).
@@ -1229,6 +1570,7 @@
   renderStatic();
   renderProfile();
   renderLover();
+  love.init();
   setupTilt();
   setupCursor();
   startTitle();

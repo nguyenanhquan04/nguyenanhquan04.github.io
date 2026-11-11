@@ -15,10 +15,10 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Quicksand:wght@400;500;600;700&family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" referrerpolicy="no-referrer" />
   <!-- Tăng số ?v= mỗi khi sửa CSS/JS để người xem nhận bản mới ngay, không phải đợi cache 10 phút -->
-  <link rel="stylesheet" href="assets/css/style.css?v=2" />
+  <link rel="stylesheet" href="assets/css/style.css?v=3" />
 </head>
 <body>
   <!-- Nền: video / ảnh / gradient + lớp hạt -->
@@ -122,10 +122,56 @@
     <footer class="footer" id="footer"></footer>
   </main>
 
+  <!-- Trang riêng của người yêu (mở khi bấm thẻ "Người yêu tôi", hoặc vào thẳng /#love) -->
+  <section class="love" id="love-view" aria-label="Trang người yêu" hidden>
+    <div class="love-bg" aria-hidden="true">
+      <div class="love-blob b1"></div>
+      <div class="love-blob b2"></div>
+      <div class="love-blob b3"></div>
+      <div class="love-hearts" id="love-hearts"></div>
+    </div>
+
+    <div class="love-inner">
+      <div class="love-top">
+        <button class="love-back" id="love-back" type="button">
+          <i class="fa-solid fa-arrow-left" aria-hidden="true"></i> Quay lại
+        </button>
+      </div>
+
+      <header class="love-hero">
+        <div class="love-moon" aria-hidden="true">
+          <span class="moon"></span>
+          <i class="fa-solid fa-star sparkle s1"></i><i class="fa-solid fa-star sparkle s2"></i><i class="fa-regular fa-star sparkle s3"></i><i class="fa-solid fa-star sparkle s4"></i>
+        </div>
+        <div class="love-avatar-wrap">
+          <img class="love-avatar" id="love-avatar" alt="Ảnh đại diện" />
+          <img class="love-deco" id="love-deco" alt="" hidden />
+          <span class="love-dot" id="love-dot" hidden></span>
+        </div>
+        <p class="love-kicker" id="love-kicker"></p>
+        <h2 class="love-name" id="love-name"></h2>
+        <p class="love-handle" id="love-handle"></p>
+        <p class="love-status" id="love-status" hidden></p>
+      </header>
+
+      <section class="love-card love-couple" id="love-couple" aria-label="Hai đứa"></section>
+      <section class="love-card love-now" id="love-now" aria-label="Cô ấy đang làm gì" hidden></section>
+      <section class="love-card love-letter" id="love-letter" aria-label="Lời nhắn" hidden></section>
+      <section class="love-gallery" id="love-gallery" aria-label="Ảnh" hidden></section>
+
+      <div class="love-actions">
+        <a class="love-btn" id="love-discord" target="_blank" rel="noopener noreferrer">
+          <i class="fa-brands fa-discord" aria-hidden="true"></i> Hồ sơ Discord
+        </a>
+      </div>
+      <footer class="love-foot" id="love-foot"></footer>
+    </div>
+  </section>
+
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <div class="cursor" id="cursor" aria-hidden="true"></div>
 
-  <script src="assets/js/config.js?v=2"></script>
-  <script src="assets/js/main.js?v=2"></script>
+  <script src="assets/js/config.js?v=3"></script>
+  <script src="assets/js/main.js?v=3"></script>
 </body>
 </html>
