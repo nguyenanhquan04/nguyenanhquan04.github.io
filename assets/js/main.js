@@ -341,7 +341,6 @@
       mute: $("#btn-mute"),
       volIcon: $("#vol-icon"),
       vol: $("#vol"),
-      listBtn: $("#btn-list"),
       list: $("#playlist"),
     };
 
@@ -371,20 +370,33 @@
       input.style.setProperty("--p", `${((+input.value - min) / (max - min)) * 100}%`);
     };
 
-    // Playlist items
+    // Playlist rows, Zing MP3 style: thumbnail (bars over it while playing), title, artist
+    const thumb = (t) => {
+      const box = h("span", { class: "zm-thumb", "aria-hidden": "true" }, icon("fa-solid fa-music"));
+      if (t.cover) {
+        const img = h("img", { src: t.cover, alt: "", loading: "lazy" });
+        img.addEventListener("error", () => img.remove(), { once: true });
+        box.append(img);
+      }
+      box.append(h("span", { class: "eq" }, h("i"), h("i"), h("i")));
+      return box;
+    };
     const items = tracks.map((t, i) =>
       h(
         "li",
         {},
         h(
           "button",
-          { class: "pl-item", type: "button", onclick: () => load(i, true) },
-          h("span", { class: "pl-num" }, h("span", { class: "n" }, String(i + 1)), h("span", { class: "eq", "aria-hidden": "true" }, h("i"), h("i"), h("i"))),
-          h("span", { class: "pl-text" }, h("span", { class: "pl-title" }, t.title), t.artist ? h("span", { class: "pl-artist" }, t.artist) : null)
+          { class: "zm-row", type: "button", onclick: () => load(i, true) },
+          h("span", { class: "zm-row-num" }, String(i + 1)),
+          thumb(t),
+          h("span", { class: "zm-text" }, h("span", { class: "zm-row-title" }, t.title), t.artist ? h("span", { class: "zm-row-artist" }, t.artist) : null)
         )
       )
     );
     el.list.replaceChildren(...items);
+    el.count.textContent = `${tracks.length} bài hát`;
+    $("#music-playlist").textContent = m.playlistName || "Playlist của tôi";
 
     function setMediaSession(t) {
       if (!("mediaSession" in navigator) || typeof MediaMetadata === "undefined") return;
@@ -405,7 +417,8 @@
       el.title.textContent = t.title;
       el.artist.textContent = t.artist;
       el.artist.hidden = !t.artist;
-      el.count.textContent = tracks.length > 1 ? `${i + 1}/${tracks.length}` : "";
+      // the cover also tints the whole panel (blurred), like Zing's player
+      root.style.setProperty("--zm-cover", t.cover ? `url("${encodeURI(t.cover).replace(/"/g, "%22")}")` : "none");
 
       if (t.cover) {
         el.cover.onerror = () => {
@@ -550,13 +563,6 @@
       if (audio.duration) audio.currentTime = (+el.seek.value / 1000) * audio.duration;
       seeking = false;
     });
-    el.listBtn.addEventListener("click", () => {
-      const open = el.list.hidden;
-      el.list.hidden = !open;
-      el.listBtn.setAttribute("aria-expanded", String(open));
-      el.listBtn.classList.toggle("is-on", open);
-    });
-
     // OS media keys / lock-screen controls
     function bindMediaKeys() {
       if (!("mediaSession" in navigator)) return;
@@ -856,31 +862,136 @@
   }
 
   /* ------------------------------------------------------------------ */
-  /* Tilt + cursor                                                       */
+  /* Deck: Music · Profile · Games panels. The front panel is usable;    */
+  /* the side panels are angled toward the viewer and inert until picked.*/
   /* ------------------------------------------------------------------ */
-  function setupTilt() {
-    if (!finePointer) return;
-    const card = $("#card");
-    const tilt = fx.tilt !== false && !reduceMotion;
+  const deck = (() => {
+    const deckEl = $("#deck");
+    const nav = $("#deck-nav");
+    let panels = [];
+    let active = 0;
+    let tabs = [];
 
-    card.addEventListener("pointerenter", () => tilt && card.classList.add("is-tilting"));
-    card.addEventListener("pointermove", (e) => {
-      const r = card.getBoundingClientRect();
-      const px = (e.clientX - r.left) / r.width;
-      const py = (e.clientY - r.top) / r.height;
-      card.style.setProperty("--mx", `${px * 100}%`);
-      card.style.setProperty("--my", `${py * 100}%`);
-      if (!tilt) return;
-      // Keep the card flat while the pointer is on the player so sliders are easy to drag.
-      card.style.transform = e.target.closest("#music")
-        ? ""
-        : `rotateX(${(0.5 - py) * 7}deg) rotateY(${(px - 0.5) * 9}deg)`;
-    });
-    card.addEventListener("pointerleave", () => {
-      card.classList.remove("is-tilting");
-      card.style.transform = "";
-    });
-  }
+    // offset -1 / 0 / +1 relative to the front panel, wrapping around for three panels
+    function offsetOf(i) {
+      const n = panels.length;
+      if (n < 2) return 0;
+      if (n === 2) return i === active ? 0 : i > active ? 1 : -1;
+      const d = (i - active + n) % n;
+      return d === 0 ? 0 : d === 1 ? 1 : -1;
+    }
+
+    function layout(animateWrap) {
+      panels.forEach((p, i) => {
+        const before = p.dataset.offset;
+        const off = String(offsetOf(i));
+        // With three panels, the one jumping from one side to the other would sweep across the
+        // front; fade it out and back in instead.
+        if (animateWrap && before && before !== "0" && off !== "0" && before !== off && !reduceMotion) {
+          p.animate([{ opacity: 1 }, { opacity: 0, offset: 0.35 }, { opacity: 0, offset: 0.65 }, { opacity: 1 }], { duration: 850, easing: "ease" });
+        }
+        p.dataset.offset = off;
+        p.inert = off !== "0";
+        p.setAttribute("aria-hidden", off !== "0" ? "true" : "false");
+      });
+      tabs.forEach((t, i) => t.setAttribute("aria-current", String(i === active)));
+    }
+
+    function go(i, { focus = false } = {}) {
+      if (!panels.length) return;
+      const n = panels.length;
+      const next = ((i % n) + n) % n;
+      if (next === active) return;
+      active = next;
+      layout(true);
+      if (focus) setTimeout(() => panels[active].querySelector(".panel-scroll")?.focus({ preventScroll: true }), 50);
+    }
+
+    // which side panel (if any) lies under a point, ignoring the front one
+    function sidePanelAt(x, y) {
+      const front = panels[active].getBoundingClientRect();
+      if (x >= front.left && x <= front.right && y >= front.top && y <= front.bottom) return -1;
+      for (let i = 0; i < panels.length; i += 1) {
+        if (i === active) continue;
+        const r = panels[i].getBoundingClientRect();
+        if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return i;
+      }
+      return -1;
+    }
+
+    function init() {
+      panels = [...deckEl.querySelectorAll(".panel")].filter((p) => !p.hidden);
+      active = Math.max(0, panels.findIndex((p) => p.dataset.panel === "profile"));
+      panels.forEach((p) => p.querySelector(".panel-scroll")?.setAttribute("tabindex", "-1"));
+
+      tabs = panels.length > 1
+        ? panels.map((p, i) =>
+            h(
+              "button",
+              { class: "deck-tab", type: "button", onclick: () => go(i, { focus: true }) },
+              icon(p.dataset.icon || "fa-solid fa-circle"),
+              h("span", {}, p.dataset.label || "")
+            )
+          )
+        : [];
+      nav.replaceChildren(...tabs);
+      layout(false);
+
+      // Side panels are inert, so clicks land on the deck itself: work out which one was hit.
+      deckEl.addEventListener("click", (e) => {
+        if (e.target.closest(".panel[data-offset='0']")) return;
+        const i = sidePanelAt(e.clientX, e.clientY);
+        if (i >= 0) go(i);
+      });
+      deckEl.addEventListener(
+        "pointermove",
+        (e) => {
+          const i = e.pointerType === "mouse" && !e.target.closest(".panel[data-offset='0']") ? sidePanelAt(e.clientX, e.clientY) : -1;
+          panels.forEach((p, k) => p.classList.toggle("is-hover", k === i));
+          deckEl.style.cursor = i >= 0 ? "pointer" : "";
+          // light spot on the front panel
+          const front = panels[active];
+          const r = front.getBoundingClientRect();
+          front.style.setProperty("--mx", `${((e.clientX - r.left) / r.width) * 100}%`);
+          front.style.setProperty("--my", `${((e.clientY - r.top) / r.height) * 100}%`);
+        },
+        { passive: true }
+      );
+      deckEl.addEventListener("pointerleave", () => {
+        panels.forEach((p) => p.classList.remove("is-hover"));
+        deckEl.style.cursor = "";
+      });
+
+      // Horizontal swipe on touch screens
+      let sx = 0;
+      let sy = 0;
+      let tracking = false;
+      deckEl.addEventListener("pointerdown", (e) => {
+        if (e.pointerType !== "touch" || e.target.closest("input")) return;
+        tracking = true;
+        sx = e.clientX;
+        sy = e.clientY;
+      });
+      deckEl.addEventListener("pointerup", (e) => {
+        if (!tracking) return;
+        tracking = false;
+        const dx = e.clientX - sx;
+        const dy = e.clientY - sy;
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) go(active + (dx < 0 ? 1 : -1));
+      });
+      deckEl.addEventListener("pointercancel", () => (tracking = false));
+
+      // ← → switch panels, except while typing or dragging a slider
+      document.addEventListener("keydown", (e) => {
+        if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+        if (e.altKey || e.ctrlKey || e.metaKey || document.documentElement.classList.contains("love-open")) return;
+        if (e.target.closest?.("input, textarea, select, [contenteditable], [role='tab']")) return;
+        go(active + (e.key === "ArrowRight" ? 1 : -1));
+      });
+    }
+
+    return { init, go };
+  })();
 
   function setupCursor() {
     if (!finePointer || fx.cursor === false || reduceMotion) return;
@@ -1605,6 +1716,245 @@
     };
   })();
 
+  /* ------------------------------------------------------------------ */
+  /* Games panel: one tab per game (WuWa · Genshin · HSR).               */
+  /* Genshin/HSR stats come from assets/data/games.json, which the       */
+  /* "Update game stats" GitHub Action fills from Enka.Network.          */
+  /* WuWa (no public API) and any extra stats come from config.js.       */
+  /* ------------------------------------------------------------------ */
+  const games = (() => {
+    const gc = cfg.games || {};
+    const list = (Array.isArray(gc.list) ? gc.list : []).filter((g) => g && g.id && g.name);
+    if (!list.length) return { init() {}, renderLive() {} };
+
+    const root = $("#games");
+    const FETCHED = new Set(["genshin", "hsr"]);
+    const DISCORD_NAMES = { wuwa: ["Wuthering Waves"], genshin: ["Genshin Impact"], hsr: ["Honkai: Star Rail", "Honkai Star Rail"] };
+    const LEVEL_LABEL = { wuwa: "Union Level", genshin: "Cấp Mạo Hiểm", hsr: "Cấp Khai Phá" };
+    let data = {};
+    let current = 0;
+    let token = 0;
+    const tabs = [];
+    const panels = [];
+    const liveSlots = [];
+    const liveDots = [];
+
+    const fmtNum = (n) => (typeof n === "number" ? n.toLocaleString("vi-VN") : String(n));
+    const filled = (v) => v != null && v !== "";
+    const uidOf = (g) => String(g.uid || "").trim();
+
+    function statsFor(g, d) {
+      const out = [];
+      const add = (label, value) => filled(value) && out.push({ label, value: fmtNum(value) });
+      if (g.id === "genshin" && d) {
+        add("Cấp Mạo Hiểm", d.level);
+        add("Cấp Thế Giới", d.worldLevel);
+        add("Thành tựu", d.achievements);
+        add("La Hoàn Thâm Cảnh", d.abyss);
+        add("Kịch Trường Ảo Tưởng", d.theater);
+        add("Thân thiết tối đa", d.friendship ? `${d.friendship} nhân vật` : "");
+      } else if (g.id === "hsr" && d) {
+        add("Cấp Khai Phá", d.level);
+        add("Cấp Cân Bằng", d.worldLevel);
+        add("Thành tựu", d.achievements);
+        add("Nhân vật", d.characterCount);
+        add("Nón Ánh Sáng", d.lightCones);
+        add("Vũ Trụ Mô Phỏng", d.universe ? `Thế giới ${d.universe}` : "");
+      } else {
+        add(LEVEL_LABEL[g.id] || "Cấp", g.level);
+      }
+      (Array.isArray(g.stats) ? g.stats : []).forEach((s) => s && s.label && add(s.label, s.value));
+      return out;
+    }
+
+    function charGrid(chars) {
+      if (!chars.some((c) => c.icon)) {
+        return h("div", { class: "gm-tags" }, chars.map((c) => h("span", { class: "gm-chip" }, icon("fa-solid fa-star"), c.name)));
+      }
+      return h(
+        "div",
+        { class: "gm-chars" },
+        chars.slice(0, 8).map((c) => {
+          const box = h("div", { class: "gm-char-img" });
+          if (c.icon) {
+            const img = h("img", { src: c.icon, alt: "", loading: "lazy" });
+            img.addEventListener("error", () => img.replaceWith(icon("fa-solid fa-user")), { once: true });
+            box.append(img);
+          } else {
+            box.append(icon("fa-solid fa-user"));
+          }
+          if (c.level) box.append(h("span", { class: "gm-char-lv" }, `Lv.${c.level}${c.eidolon ? ` · E${c.eidolon}` : ""}`));
+          return h("figure", { class: "gm-char", "data-rarity": c.rarity || 4 }, box, h("figcaption", {}, c.name || ""));
+        })
+      );
+    }
+
+    function fmtUpdated(iso) {
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return "";
+      const p = (n) => String(n).padStart(2, "0");
+      return `${p(d.getDate())}/${p(d.getMonth() + 1)} ${p(d.getHours())}:${p(d.getMinutes())}`;
+    }
+
+    function buildPanel(g, i) {
+      const d = data[g.id] && data[g.id].uid === uidOf(g) ? data[g.id] : null;
+      const uid = uidOf(g);
+      const nickname = d?.nickname || g.nickname || "";
+      const stats = statsFor(g, d);
+      const chars = d?.characters?.length ? d.characters : (Array.isArray(g.characters) ? g.characters : []).filter(Boolean).map((name) => ({ name }));
+
+      const live = h("span", { class: "gm-live" });
+      liveSlots[i] = live;
+      const meta = [];
+      if (uid) {
+        meta.push(h("button", { class: "gm-chip", type: "button", "aria-label": `Sao chép UID ${uid}`, onclick: () => copyText(uid) }, icon("fa-regular fa-copy"), `UID ${uid}`));
+      }
+      if (g.server) meta.push(h("span", { class: "gm-chip" }, icon("fa-solid fa-earth-asia"), g.server));
+      meta.push(live);
+
+      return h(
+        "section",
+        { class: `gm-panel gm-${g.id}`, id: `gm-panel-${g.id}`, role: "tabpanel", "aria-labelledby": `gm-tab-${g.id}`, hidden: i !== current },
+        h(
+          "div",
+          { class: "gm-banner" },
+          h("h3", { class: "gm-game" }, g.name),
+          nickname ? h("div", { class: "gm-player" }, nickname) : null,
+          d?.signature ? h("div", { class: "gm-sign" }, `“${d.signature}”`) : null,
+          h("div", { class: "gm-meta" }, meta)
+        ),
+        stats.length
+          ? h("div", { class: "gm-stats" }, stats.map((s) => h("div", { class: "gm-stat" }, h("div", { class: "gm-stat-value" }, s.value), h("div", { class: "gm-stat-label" }, s.label))))
+          : null,
+        chars.length ? h("h4", { class: "gm-sub" }, d?.characters?.length ? "Nhân vật trưng bày" : "Nhân vật") : null,
+        chars.length ? charGrid(chars) : null,
+        d
+          ? h(
+              "p",
+              { class: "gm-source" },
+              "Dữ liệu từ ",
+              h("a", { href: "https://enka.network", target: "_blank", rel: "noopener noreferrer" }, "Enka.Network"),
+              data.updatedAt ? ` · cập nhật ${fmtUpdated(data.updatedAt)}` : ""
+            )
+          : null
+      );
+    }
+
+    function select(i, { focus = false } = {}) {
+      if (i === current || !panels[i]) return;
+      const dir = i > current ? 1 : -1;
+      const from = current;
+      const out = panels[from];
+      const inn = panels[i];
+      tabs[from].setAttribute("aria-selected", "false");
+      tabs[from].tabIndex = -1;
+      tabs[i].setAttribute("aria-selected", "true");
+      tabs[i].tabIndex = 0;
+      if (focus) tabs[i].focus();
+      current = i;
+
+      const my = ++token;
+      panels.forEach((p, k) => (p.hidden = k !== from));
+      if (reduceMotion || !out.animate) {
+        out.hidden = true;
+        inn.hidden = false;
+        return;
+      }
+      // flip the old card away and the new one in, in the direction of travel
+      const away = `translateX(${-dir * 46}px) rotateY(${dir * 28}deg) scale(0.95)`;
+      const enter = `translateX(${dir * 46}px) rotateY(${-dir * 28}deg) scale(0.95)`;
+      out.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: away }], { duration: 200, easing: "ease-in" }).onfinish = () => {
+        if (my !== token) return;
+        out.hidden = true;
+        inn.hidden = false;
+        inn.animate([{ opacity: 0, transform: enter }, { opacity: 1, transform: "none" }], { duration: 380, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" });
+      };
+    }
+
+    function build() {
+      tabs.length = 0;
+      panels.length = 0;
+      list.forEach((g, i) => {
+        const dot = h("span", { class: "live-dot", hidden: true, "aria-hidden": "true" });
+        liveDots[i] = dot;
+        tabs.push(
+          h(
+            "button",
+            {
+              class: `gm-tab gm-${g.id}`,
+              id: `gm-tab-${g.id}`,
+              type: "button",
+              role: "tab",
+              "aria-selected": String(i === current),
+              "aria-controls": `gm-panel-${g.id}`,
+              tabindex: i === current ? 0 : -1,
+              onclick: () => select(i),
+            },
+            h("span", {}, g.short || g.name),
+            dot
+          )
+        );
+        panels.push(buildPanel(g, i));
+      });
+      const tablist = $("#gm-tabs");
+      tablist.hidden = list.length < 2;
+      tablist.replaceChildren(...tabs);
+      $("#gm-stage").replaceChildren(...panels);
+    }
+
+    // "Đang chơi" chip + dot on the tab when Discord shows that game running
+    function renderLive() {
+      const acts = state.discord?.activities || [];
+      list.forEach((g, i) => {
+        const names = (g.discordName ? [g.discordName] : DISCORD_NAMES[g.id] || [g.name]).map((n) => n.toLowerCase());
+        const a = acts.find((x) => x.type === 0 && names.includes(String(x.name || "").toLowerCase()));
+        if (liveDots[i]) liveDots[i].hidden = !a;
+        liveSlots[i]?.replaceChildren(
+          ...(a
+            ? [h("span", { class: "gm-chip is-live" }, icon("fa-solid fa-circle"), "Đang chơi", a.timestamps?.start ? h("span", { "data-since": a.timestamps.start }, "") : null)]
+            : [])
+        );
+      });
+      tickTimers();
+    }
+
+    async function loadData() {
+      for (const url of [gc.dataUrl, "assets/data/games.json"].filter(Boolean)) {
+        try {
+          const res = await fetch(url, { cache: "no-cache" });
+          if (!res.ok) continue;
+          data = await res.json();
+          return true;
+        } catch {
+          /* try the next source */
+        }
+      }
+      return false;
+    }
+
+    return {
+      init() {
+        root.hidden = false;
+        $("#gm-title").textContent = gc.title || "Game tôi chơi";
+        build();
+        renderLive();
+        $("#gm-tabs").addEventListener("keydown", (e) => {
+          if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+          e.preventDefault();
+          select((current + (e.key === "ArrowRight" ? 1 : -1) + list.length) % list.length, { focus: true });
+        });
+        if (list.some((g) => FETCHED.has(g.id) && uidOf(g))) {
+          loadData().then((ok) => {
+            if (!ok) return;
+            build();
+            renderLive();
+          });
+        }
+      },
+      renderLive,
+    };
+  })();
+
   // Keyed render: a card is rebuilt only when its data changed.
   const cardCache = new Map();
 
@@ -1687,6 +2037,7 @@
       state.discord = data;
       renderProfile();
       renderActivity();
+      games.renderLive();
     } else if (id === LOVER_ID) {
       state.lover = data;
       renderLover();
@@ -1847,7 +2198,8 @@
   renderProfile();
   renderLover();
   love.init();
-  setupTilt();
+  games.init();
+  deck.init();
   setupCursor();
   startTitle();
   setupEnter();

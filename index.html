@@ -18,7 +18,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Quicksand:wght@400;500;600;700&family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" referrerpolicy="no-referrer" />
   <!-- Tăng số ?v= mỗi khi sửa CSS/JS để người xem nhận bản mới ngay, không phải đợi cache 10 phút -->
-  <link rel="stylesheet" href="assets/css/style.css?v=7" />
+  <link rel="stylesheet" href="assets/css/style.css?v=8" />
 </head>
 <body>
   <!-- Nền: bầu trời đêm + dải ngân hà (hoặc video / ảnh) + canvas sao & sao băng -->
@@ -37,88 +37,107 @@
   </button>
 
   <main class="stage" id="stage">
-    <article class="card" id="card">
-      <header class="profile">
-        <div class="avatar-wrap">
-          <img class="avatar" id="avatar" alt="Ảnh đại diện" />
-          <img class="avatar-deco" id="avatar-deco" alt="" hidden />
-          <span class="status-dot" id="status-dot" hidden></span>
-        </div>
+    <!-- 3 thẻ: Nhạc (trái) · Hồ sơ (giữa) · Game (phải).
+         Bấm thẻ bên cạnh, bấm nút phía trên, vuốt ngang (điện thoại) hoặc phím ← → để chuyển. -->
+    <nav class="deck-nav" id="deck-nav" aria-label="Chọn thẻ"></nav>
 
-        <h1 class="name" id="name"></h1>
-        <div class="badges" id="badges"></div>
-        <p class="meta" id="meta"></p>
-        <p class="bio"><span id="bio-text"></span><span class="caret" aria-hidden="true">|</span></p>
-      </header>
+    <div class="deck" id="deck">
+      <!-- Thẻ nhạc kiểu Zing MP3. Danh sách bài nằm trong assets/js/config.js (music.tracks) -->
+      <article class="panel panel-music" id="music" data-panel="music" data-label="Nhạc" data-icon="fa-solid fa-music" aria-label="Âm nhạc" hidden>
+        <div class="zm-bg" aria-hidden="true"></div>
+        <div class="panel-scroll">
+          <header class="zm-head">
+            <span class="zm-from">Đang phát từ</span>
+            <span class="zm-playlist" id="music-playlist"></span>
+          </header>
 
-      <nav class="socials" id="socials" aria-label="Mạng xã hội"></nav>
-
-      <section class="lover" id="lover" aria-label="Người yêu"></section>
-
-      <!-- Trình phát playlist có đĩa xoay. Danh sách bài nằm trong assets/js/config.js -->
-      <section class="music" id="music" aria-label="Trình phát nhạc" hidden>
-        <div class="music-main">
-          <div class="turntable" aria-hidden="true">
-            <div class="disc">
-              <div class="disc-label">
-                <img id="disc-cover" alt="" hidden />
-                <i class="fa-solid fa-music" id="disc-icon"></i>
-              </div>
+          <div class="zm-art" aria-hidden="true">
+            <div class="zm-disc">
+              <img id="disc-cover" alt="" hidden />
+              <i class="fa-solid fa-music" id="disc-icon"></i>
             </div>
-            <div class="disc-sheen"></div>
-            <div class="tonearm"></div>
           </div>
 
-          <div class="music-body">
-            <div class="music-label">
-              <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
-              <span id="music-state">Tạm dừng</span>
-              <span class="music-count" id="music-count"></span>
-            </div>
-            <div class="music-title" id="music-title"></div>
-            <div class="music-artist" id="music-artist"></div>
-            <input class="range seek" id="seek" type="range" min="0" max="1000" step="1" value="0" aria-label="Tua bài hát" />
-            <div class="times"><span id="t-cur">0:00</span><span id="t-dur">0:00</span></div>
+          <div class="zm-info">
+            <div class="zm-title" id="music-title"></div>
+            <div class="zm-artist" id="music-artist"></div>
+            <span class="sr-only" id="music-state" aria-live="polite"></span>
           </div>
-        </div>
 
-        <div class="music-controls">
-          <button class="mbtn" id="btn-list" type="button" aria-label="Danh sách phát" data-tip="Danh sách phát" aria-expanded="false" aria-controls="playlist">
-            <i class="fa-solid fa-list-ul" aria-hidden="true"></i>
-          </button>
-          <div class="transport">
-            <button class="mbtn" id="btn-shuffle" type="button" aria-label="Trộn bài" data-tip="Trộn bài" aria-pressed="false">
+          <input class="range seek" id="seek" type="range" min="0" max="1000" step="1" value="0" aria-label="Tua bài hát" />
+          <div class="times"><span id="t-cur">0:00</span><span id="t-dur">0:00</span></div>
+
+          <div class="zm-controls">
+            <button class="zbtn" id="btn-shuffle" type="button" aria-label="Trộn bài" data-tip="Trộn bài" aria-pressed="false">
               <i class="fa-solid fa-shuffle" aria-hidden="true"></i>
             </button>
-            <button class="mbtn" id="btn-prev" type="button" aria-label="Bài trước" data-tip="Bài trước">
+            <button class="zbtn" id="btn-prev" type="button" aria-label="Bài trước" data-tip="Bài trước">
               <i class="fa-solid fa-backward-step" aria-hidden="true"></i>
             </button>
-            <button class="mbtn mbtn-play" id="btn-play" type="button" aria-label="Phát">
+            <button class="zbtn zbtn-play" id="btn-play" type="button" aria-label="Phát">
               <i class="fa-solid fa-play" id="play-icon" aria-hidden="true"></i>
             </button>
-            <button class="mbtn" id="btn-next" type="button" aria-label="Bài tiếp" data-tip="Bài tiếp">
+            <button class="zbtn" id="btn-next" type="button" aria-label="Bài tiếp" data-tip="Bài tiếp">
               <i class="fa-solid fa-forward-step" aria-hidden="true"></i>
             </button>
-            <button class="mbtn" id="btn-repeat" type="button" aria-label="Lặp lại">
+            <button class="zbtn" id="btn-repeat" type="button" aria-label="Lặp lại">
               <i class="fa-solid fa-repeat" aria-hidden="true"></i><span class="repeat-one" aria-hidden="true">1</span>
             </button>
           </div>
-          <div class="vol">
-            <button class="mbtn" id="btn-mute" type="button" aria-label="Tắt tiếng" data-tip="Tắt tiếng">
+
+          <div class="zm-vol">
+            <button class="zbtn zbtn-sm" id="btn-mute" type="button" aria-label="Tắt tiếng" data-tip="Tắt tiếng">
               <i class="fa-solid fa-volume-high" id="vol-icon" aria-hidden="true"></i>
             </button>
             <input class="range vol-range" id="vol" type="range" min="0" max="1" step="0.01" aria-label="Âm lượng" />
           </div>
+
+          <div class="zm-list-head">
+            <span>Danh sách phát</span>
+            <span class="zm-count" id="music-count"></span>
+          </div>
+          <ol class="zm-list" id="playlist"></ol>
         </div>
-
-        <ol class="playlist" id="playlist" hidden></ol>
         <audio id="audio" preload="metadata"></audio>
-      </section>
+      </article>
 
-      <section class="activity" id="activity" aria-label="Hoạt động"></section>
+      <!-- Thẻ hồ sơ (giữa) -->
+      <article class="panel panel-profile" id="card" data-panel="profile" data-label="Hồ sơ" data-icon="fa-solid fa-user" aria-label="Hồ sơ">
+        <div class="panel-scroll">
+          <header class="profile">
+            <div class="avatar-wrap">
+              <img class="avatar" id="avatar" alt="Ảnh đại diện" />
+              <img class="avatar-deco" id="avatar-deco" alt="" hidden />
+              <span class="status-dot" id="status-dot" hidden></span>
+            </div>
 
-      <section class="links" id="links" aria-label="Liên kết"></section>
-    </article>
+            <h1 class="name" id="name"></h1>
+            <div class="badges" id="badges"></div>
+            <p class="meta" id="meta"></p>
+            <p class="bio"><span id="bio-text"></span><span class="caret" aria-hidden="true">|</span></p>
+          </header>
+
+          <nav class="socials" id="socials" aria-label="Mạng xã hội"></nav>
+
+          <section class="lover" id="lover" aria-label="Người yêu"></section>
+
+          <section class="activity" id="activity" aria-label="Hoạt động"></section>
+
+          <section class="links" id="links" aria-label="Liên kết"></section>
+        </div>
+      </article>
+
+      <!-- Thẻ game: WuWa · Genshin · HSR (cấu hình trong assets/js/config.js → games) -->
+      <article class="panel panel-games" id="games" data-panel="games" data-label="Game" data-icon="fa-solid fa-gamepad" aria-label="Game" hidden>
+        <div class="panel-scroll">
+          <header class="gm-head">
+            <span class="gm-kicker"><i class="fa-solid fa-gamepad" aria-hidden="true"></i> <span id="gm-title"></span></span>
+            <div class="gm-tabs" id="gm-tabs" role="tablist" aria-label="Chọn game"></div>
+          </header>
+          <div class="gm-stage" id="gm-stage"></div>
+        </div>
+      </article>
+    </div>
 
     <footer class="footer" id="footer"></footer>
   </main>
@@ -197,7 +216,7 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <div class="cursor" id="cursor" aria-hidden="true"></div>
 
-  <script src="assets/js/config.js?v=7"></script>
-  <script src="assets/js/main.js?v=7"></script>
+  <script src="assets/js/config.js?v=8"></script>
+  <script src="assets/js/main.js?v=8"></script>
 </body>
 </html>

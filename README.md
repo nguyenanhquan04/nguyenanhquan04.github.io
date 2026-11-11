@@ -14,7 +14,9 @@ Trang bio-link tĩnh, chỉ dùng HTML/CSS/JS thuần, không cần build. Chạ
   - **Discord**: trạng thái online, custom status, game/app đang dùng kèm thời gian
   - **Spotify**: bài đang nghe, ảnh album, thanh tiến trình
   - **GitHub**: số repo, follower, tổng sao
-- Trình phát playlist có đĩa than xoay và kim đĩa: bài trước/tiếp, tua, trộn bài, lặp lại, âm lượng, danh sách bài, điều khiển bằng phím media của máy
+- Bố cục 3 thẻ xoay 3D: **Nhạc** (trái) · **Hồ sơ** (giữa) · **Game** (phải). Bấm thẻ bên cạnh, bấm tab phía trên, vuốt ngang trên điện thoại hoặc dùng phím ← →
+- Thẻ nhạc kiểu Zing MP3: bìa tròn xoay, nền mờ theo màu ảnh bìa, tua, trộn bài, lặp lại, âm lượng, danh sách bài bên dưới, điều khiển bằng phím media của máy
+- Thẻ game WuWa · Genshin · HSR: tab chuyển có hiệu ứng lật, stats, nhân vật trưng bày, chấm "Đang chơi" khi Discord thấy bạn đang mở game
 - Tự co giãn trên điện thoại, tôn trọng cài đặt "giảm chuyển động" của hệ điều hành
 
 ## Cấu trúc
@@ -25,6 +27,9 @@ assets/js/config.js   ← File bạn cần sửa: thông tin, link, màu, hiệu
 assets/js/main.js     Logic: hiệu ứng, Discord (Lanyard), GitHub API
 assets/css/style.css  Giao diện
 assets/media/         Nơi để nhạc, video nền, ảnh
+assets/data/          games.json do GitHub Actions tạo (stats Genshin/HSR)
+scripts/              fetch-games.mjs: lấy stats game từ Enka.Network
+.github/workflows/    games.yml: chạy fetch-games.mjs mỗi 6 giờ
 .nojekyll             Báo GitHub Pages phục vụ file nguyên trạng
 ```
 
@@ -59,6 +64,16 @@ Bấm vào thẻ sẽ mở trang riêng màu hồng kem của người ấy (lin
 - `music.tracks`: bài hát riêng. Khi trang mở, nhạc chính tạm dừng và bài này phát; đóng trang thì nhạc chính phát tiếp
 
 Mục nào để trống sẽ được ẩn. Đặt `page: false` để thẻ mở hồ sơ Discord như cũ.
+
+### Thẻ game
+
+Điền vào `games.list` trong `config.js`:
+
+- **Genshin Impact** và **Honkai: Star Rail**: chỉ cần `uid`. Workflow `.github/workflows/games.yml` chạy `scripts/fetch-games.mjs` mỗi 6 giờ (và mỗi khi `config.js` đổi), lấy stats từ [Enka.Network](https://enka.network) rồi ghi vào `assets/data/games.json`. Trang phải đọc qua file này vì Enka không cho trình duyệt gọi thẳng từ trang khác. Trong game, nhớ bật hiện nhân vật trưng bày trên hồ sơ.
+- **Wuthering Waves**: không có API công khai nên bạn tự điền `nickname`, `level`, `stats`, `characters`.
+- `stats: [{ label, value }]` dùng được cho cả 3 game, hiện thêm sau stats tự động.
+
+Chạy tay: tab **Actions** → **Update game stats** → **Run workflow**.
 
 ### Thêm bài vào playlist
 

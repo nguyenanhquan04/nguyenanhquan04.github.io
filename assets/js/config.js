@@ -90,15 +90,46 @@ window.PROFILE = {
     },
   },
 
-  /* ---------- Trình phát nhạc (playlist, đĩa xoay) ----------
+  /* ---------- Thẻ game (thẻ bên phải) ----------
+   * Genshin Impact và Honkai: Star Rail: chỉ cần điền UID. GitHub Actions lấy stats từ
+   * Enka.Network mỗi 6 giờ (cấp, thành tựu, La Hoàn, nhân vật trưng bày...).
+   * Trong game nhớ bật hiện nhân vật trưng bày / chi tiết nhân vật trên hồ sơ.
+   * Wuthering Waves không có API công khai nên tự điền stats.
+   * - stats: [{ label: "Tên", value: "Giá trị" }] hiện thêm sau stats tự động
+   * - characters: ["Tên nhân vật", ...] (dùng cho WuWa)
+   * Xoá một game khỏi list để ẩn tab đó. Xoá hết để ẩn thẻ game.
+   */
+  games: {
+    title: "Game tôi chơi",
+    dataUrl: "https://raw.githubusercontent.com/nguyenanhquan04/nguyenanhquan04.github.io/main/assets/data/games.json",
+    list: [
+      {
+        id: "wuwa",
+        name: "Wuthering Waves",
+        short: "WuWa",
+        uid: "",
+        server: "",         // ví dụ "Asia" / "SEA"
+        nickname: "",
+        level: "",          // Union Level
+        stats: [],          // ví dụ [{ label: "Tháp Ảo Ảnh", value: "Tầng 4" }]
+        characters: [],     // ví dụ ["Camellya", "Jinhsi"]
+      },
+      { id: "genshin", name: "Genshin Impact", short: "Genshin", uid: "", server: "", stats: [] },
+      { id: "hsr", name: "Honkai: Star Rail", short: "HSR", uid: "", server: "", stats: [] },
+    ],
+  },
+
+  /* ---------- Thẻ nhạc (thẻ bên trái, kiểu Zing MP3) ----------
    * Thêm bài: tải file mp3 vào assets/media/ rồi thêm một dòng vào "tracks".
    * - src:    đường dẫn file nhạc (bắt buộc)
    * - title:  tên bài. Để trống = lấy tên file
    * - artist: ca sĩ (không bắt buộc)
-   * - cover:  ảnh bìa hiện ở giữa đĩa (URL hoặc "assets/media/anh.jpg"). Để trống = nhãn đĩa màu
-   * Xoá hết bài (tracks: []) để ẩn trình phát.
+   * - cover:  ảnh bìa (URL hoặc "assets/media/anh.jpg"): hiện ở đĩa tròn, trong danh sách,
+   *           và làm màu nền mờ của thẻ. Để trống = màu gradient
+   * Xoá hết bài (tracks: []) để ẩn thẻ nhạc.
    */
   music: {
+    playlistName: "Playlist của tôi", // Dòng "Đang phát từ ..." ở đầu thẻ
     volume: 0.35,           // Âm lượng ban đầu, 0 → 1
     shuffle: false,         // true = trộn bài
     repeat: "all",          // "all" = lặp cả danh sách | "one" = lặp một bài | "off" = hết danh sách thì dừng
@@ -134,7 +165,6 @@ window.PROFILE = {
   effects: {
     enterScreen: true,      // Màn hình "nhấn để vào" (cần nếu muốn tự phát nhạc)
     enterText: "nhấn để vào",
-    tilt: true,             // Thẻ nghiêng 3D theo chuột
     cursor: true,           // Con trỏ phát sáng
     typewriter: true,       // Hiệu ứng gõ chữ cho bio
     animatedTitle: true,    // Tiêu đề tab tự gõ chữ
