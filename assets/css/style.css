@@ -1449,6 +1449,147 @@ html.love-open { overflow: hidden; }
 
 .love-sync i { color: var(--l-pink-deep); }
 
+/* her song */
+.ls-main {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.ls-disc {
+  position: relative;
+  flex: none;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, transparent 0 30%, rgba(255, 255, 255, 0.5) 30.5% 32%, transparent 32.5%),
+    repeating-radial-gradient(circle, #f6b3c6 0 1.4px, #f9c7d5 1.4px 2.8px);
+  box-shadow: 0 8px 22px rgba(224, 120, 154, 0.35), inset 0 0 0 2px rgba(255, 255, 255, 0.6);
+  animation: spin 4.2s linear infinite;
+  animation-play-state: paused;
+}
+
+.love-song.is-playing .ls-disc { animation-play-state: running; }
+
+.ls-label {
+  position: absolute;
+  inset: 31%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--l-pink);
+  font-size: 0.8rem;
+}
+
+.ls-label img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ls-label::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 6px;
+  height: 6px;
+  margin: auto;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 2px var(--l-pink);
+}
+
+.ls-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.ls-body .love-card-title { margin-bottom: 4px; }
+
+.ls-title,
+.ls-artist {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.ls-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.ls-artist {
+  font-size: 0.88rem;
+  color: var(--l-ink-soft);
+}
+
+.love .ls-seek {
+  width: 100%;
+  margin-top: 14px;
+}
+
+.love .range::-webkit-slider-runnable-track {
+  background: linear-gradient(90deg, var(--l-pink) var(--p), rgba(224, 120, 154, 0.2) var(--p));
+}
+
+.love .range::-moz-range-track {
+  background: linear-gradient(90deg, var(--l-pink) var(--p), rgba(224, 120, 154, 0.2) var(--p));
+}
+
+.love .range::-webkit-slider-thumb { box-shadow: 0 0 0 3px rgba(245, 154, 181, 0.45); }
+.love .range::-moz-range-thumb { box-shadow: 0 0 0 3px rgba(245, 154, 181, 0.45); }
+.love .range:focus-visible { outline-color: var(--l-pink); }
+
+.ls-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.ls-btn {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--l-ink-soft);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+
+.ls-btn:hover,
+.ls-btn:focus-visible {
+  color: var(--l-ink);
+  background: rgba(245, 154, 181, 0.15);
+  outline: none;
+}
+
+.ls-btn:focus-visible { box-shadow: 0 0 0 2px var(--l-pink); }
+
+.ls-play {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #f7a8bf, #ec84a5);
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(224, 120, 154, 0.35);
+}
+
+.ls-play:hover,
+.ls-play:focus-visible {
+  color: #fff;
+  background: linear-gradient(135deg, #f7a8bf, #ec84a5);
+  transform: scale(1.06);
+}
+
 /* what she's doing */
 .now-item {
   display: flex;

@@ -201,7 +201,7 @@
       .map((t) => ({ src: t.src, title: t.title || fileTitle(t.src), artist: t.artist || "", cover: t.cover || "" }));
 
     const root = $("#music");
-    if (!tracks.length) return { play() {} };
+    if (!tracks.length) return { play() {}, hold() {}, release() {}, volume: () => 0.35, muted: () => false };
     root.hidden = false;
 
     const audio = $("#audio");
@@ -441,7 +441,8 @@
     });
 
     // OS media keys / lock-screen controls
-    if ("mediaSession" in navigator) {
+    function bindMediaKeys() {
+      if (!("mediaSession" in navigator)) return;
       const ms = navigator.mediaSession;
       const set = (action, fn) => {
         try {
@@ -456,6 +457,7 @@
         if (d.seekTime != null) audio.currentTime = d.seekTime;
       });
     }
+    bindMediaKeys();
 
     audio.volume = clamp(m.volume ?? 0.35, 0, 1);
     buildOrder();
@@ -464,8 +466,33 @@
     syncVolume();
     syncPlayState();
 
+    // While another page section (the lover page) plays its own song, the main
+    // playlist is "held": paused, and any request to play is deferred until release.
+    let held = false;
+    let resumeOnRelease = false;
+
     return {
+      volume: () => audio.volume,
+      muted: () => audio.muted,
+      hold() {
+        if (held) return;
+        held = true;
+        resumeOnRelease = !audio.paused;
+        audio.pause();
+      },
+      release() {
+        if (!held) return;
+        held = false;
+        bindMediaKeys();
+        setMediaSession(tracks[index]);
+        if (resumeOnRelease) play();
+        resumeOnRelease = false;
+      },
       play() {
+        if (held) {
+          resumeOnRelease = true;
+          return;
+        }
         audio.play().catch(() => {
           // Autoplay blocked (no enter screen): start on the first click outside the player.
           const once = (e) => {
@@ -1004,7 +1031,7 @@
   /* Lives in the same document so the music keeps playing.             */
   /* ------------------------------------------------------------------ */
   const love = (() => {
-    const noop = { init() {}, render() {}, setOrigin() {}, titleText: () => "" };
+    const noop = { init() {}, render() {}, setOrigin() {}, titleText: () => "", onEnter() {} };
     if (!LOVE_PAGE) return noop;
 
     const lv = cfg.lover || {};
@@ -1265,6 +1292,131 @@
       );
     }
 
+    /* Her own song(s): replaces the main playlist while this page is open. */
+    const song = (() => {
+      const sm = pg.music || {};
+      const list = (Array.isArray(sm.tracks) ? sm.tracks : [])
+        .filter((t) => t && t.src)
+        .map((t) => ({ src: t.src, title: t.title || decodeURIComponent(String(t.src).split("/").pop().replace(/\.[^.]+$/, "")), artist: t.artist || "", cover: t.cover || "" }));
+      if (!list.length) return { active: false, start() {}, stop() {} };
+
+      const box = $("#love-song");
+      const audio = $("#love-audio");
+      const seek = $("#ls-seek");
+      const playBtn = $("#ls-play");
+      const playIcon = $("#ls-play-icon");
+      let i = 0;
+      let seeking = false;
+
+      box.hidden = false;
+      $("#ls-label").textContent = sm.label || "Bài hát dành cho em";
+      $("#ls-prev").hidden = list.length < 2;
+      $("#ls-next").hidden = list.length < 2;
+      audio.loop = list.length === 1;
+
+      const fill = () => seek.style.setProperty("--p", `${(+seek.value / 1000) * 100}%`);
+
+      function mediaSession(t) {
+        if (!("mediaSession" in navigator) || typeof MediaMetadata === "undefined") return;
+        try {
+          navigator.mediaSession.metadata = new MediaMetadata({
+            title: t.title,
+            artist: t.artist,
+            album: herName(),
+            artwork: t.cover ? [{ src: new URL(t.cover, location.href).href, sizes: "300x300" }] : [],
+          });
+          const set = (a, fn) => {
+            try {
+              navigator.mediaSession.setActionHandler(a, fn);
+            } catch { /* unsupported */ }
+          };
+          set("play", () => audio.play().catch(() => {}));
+          set("pause", () => audio.pause());
+          set("previoustrack", list.length > 1 ? () => load(i - 1, true) : null);
+          set("nexttrack", list.length > 1 ? () => load(i + 1, true) : null);
+          set("seekto", (d) => {
+            if (d.seekTime != null) audio.currentTime = d.seekTime;
+          });
+        } catch { /* ignore */ }
+      }
+
+      function load(k, autoplay) {
+        i = (k + list.length) % list.length;
+        const t = list[i];
+        audio.src = t.src;
+        $("#ls-title").textContent = t.title;
+        const artist = $("#ls-artist");
+        artist.textContent = t.artist;
+        artist.hidden = !t.artist;
+        const cover = $("#ls-cover");
+        if (t.cover) {
+          cover.onerror = () => {
+            cover.hidden = true;
+            $("#ls-icon").hidden = false;
+          };
+          cover.src = t.cover;
+          cover.hidden = false;
+          $("#ls-icon").hidden = true;
+        } else {
+          cover.hidden = true;
+          $("#ls-icon").hidden = false;
+        }
+        seek.value = 0;
+        fill();
+        $("#ls-cur").textContent = "0:00";
+        $("#ls-dur").textContent = "0:00";
+        if (isOpen) mediaSession(t);
+        if (autoplay) audio.play().catch(() => {});
+      }
+
+      const sync = () => {
+        const playing = !audio.paused;
+        box.classList.toggle("is-playing", playing);
+        playIcon.className = playing ? "fa-solid fa-pause" : "fa-solid fa-play";
+        playBtn.setAttribute("aria-label", playing ? "Tạm dừng" : "Phát");
+      };
+      audio.addEventListener("play", sync);
+      audio.addEventListener("pause", sync);
+      audio.addEventListener("ended", () => load(i + 1, true)); // only fires with 2+ tracks (single track loops)
+      audio.addEventListener("loadedmetadata", () => ($("#ls-dur").textContent = fmtTime(audio.duration * 1000)));
+      audio.addEventListener("timeupdate", () => {
+        if (seeking || !audio.duration) return;
+        seek.value = Math.round((audio.currentTime / audio.duration) * 1000);
+        fill();
+        $("#ls-cur").textContent = fmtTime(audio.currentTime * 1000);
+      });
+      audio.addEventListener("error", () => console.warn("[bio] Không phát được:", list[i].src));
+      playBtn.addEventListener("click", () => (audio.paused ? audio.play().catch(() => {}) : audio.pause()));
+      $("#ls-prev").addEventListener("click", () => load(audio.currentTime > 3 ? i : i - 1, true));
+      $("#ls-next").addEventListener("click", () => load(i + 1, true));
+      seek.addEventListener("input", () => {
+        seeking = true;
+        fill();
+        if (audio.duration) $("#ls-cur").textContent = fmtTime((+seek.value / 1000) * audio.duration * 1000);
+      });
+      seek.addEventListener("change", () => {
+        if (audio.duration) audio.currentTime = (+seek.value / 1000) * audio.duration;
+        seeking = false;
+      });
+      load(0, false);
+
+      return {
+        active: true,
+        // Called when the page opens (or when the visitor clicks "enter" while it is open).
+        start() {
+          music.hold();
+          audio.volume = music.volume();
+          audio.muted = music.muted();
+          mediaSession(list[i]);
+          audio.play().catch(() => {}); // blocked without a click; the enter screen retries
+        },
+        stop() {
+          audio.pause();
+          music.release();
+        },
+      };
+    })();
+
     function render() {
       if (!isOpen) return;
       renderHero();
@@ -1286,6 +1438,7 @@
       render();
       document.documentElement.classList.add("love-open");
       $("#stage").inert = true;
+      song.start();
       // two frames so the closed clip-path is painted before the transition starts
       requestAnimationFrame(() => requestAnimationFrame(() => view.classList.add("is-open")));
       setTimeout(() => back.focus({ preventScroll: true }), 60);
@@ -1297,6 +1450,7 @@
       view.classList.remove("is-open");
       document.documentElement.classList.remove("love-open");
       $("#stage").inert = false;
+      song.stop();
       closeTimer = setTimeout(() => (view.hidden = true), reduceMotion ? 0 : 850);
       document.querySelector("#lover .acard")?.focus({ preventScroll: true });
     }
@@ -1327,6 +1481,10 @@
       render,
       setOrigin,
       titleText: () => (isOpen ? `♡ ${herName()}` : ""),
+      // The enter-screen click is the first user gesture: start her song if her page is showing.
+      onEnter() {
+        if (isOpen && song.active) song.start();
+      },
     };
   })();
 
@@ -1534,7 +1692,8 @@
   function reveal() {
     $("#stage").classList.add("is-visible");
     startTypewriter();
-    music.play();
+    music.play(); // deferred automatically if her page is open with its own song
+    love.onEnter();
   }
 
   function setupEnter() {

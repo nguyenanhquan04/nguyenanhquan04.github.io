@@ -77,6 +77,15 @@ window.PROFILE = {
       letterTitle: "Gửi em",
       message: "",          // Lời nhắn. Xuống dòng bằng \n
       photos: [],           // Ảnh: ["assets/media/anh1.jpg", "assets/media/anh2.jpg"]
+
+      // Nhạc riêng: khi trang của cô ấy mở, nhạc chính tạm dừng và bài này phát.
+      // Đóng trang thì nhạc chính phát tiếp. Để tracks: [] nếu không dùng.
+      music: {
+        label: "Bài hát dành cho em",
+        tracks: [
+          // { src: "assets/media/ten-file.mp3", title: "Tên bài", artist: "Ca sĩ", cover: "" },
+        ],
+      },
     },
   },
 

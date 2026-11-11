@@ -155,6 +155,31 @@
       </header>
 
       <section class="love-card love-couple" id="love-couple" aria-label="Hai đứa"></section>
+
+      <!-- Nhạc riêng của trang này: thay nhạc chính khi trang mở, trả lại khi đóng -->
+      <section class="love-card love-song" id="love-song" aria-label="Bài hát" hidden>
+        <div class="ls-main">
+          <div class="ls-disc" aria-hidden="true">
+            <div class="ls-label">
+              <img id="ls-cover" alt="" hidden />
+              <i class="fa-solid fa-heart" id="ls-icon"></i>
+            </div>
+          </div>
+          <div class="ls-body">
+            <h3 class="love-card-title"><i class="fa-solid fa-music" aria-hidden="true"></i> <span id="ls-label"></span></h3>
+            <div class="ls-title" id="ls-title"></div>
+            <div class="ls-artist" id="ls-artist"></div>
+          </div>
+        </div>
+        <input class="range ls-seek" id="ls-seek" type="range" min="0" max="1000" step="1" value="0" aria-label="Tua bài hát" />
+        <div class="times"><span id="ls-cur">0:00</span><span id="ls-dur">0:00</span></div>
+        <div class="ls-controls">
+          <button class="ls-btn" id="ls-prev" type="button" aria-label="Bài trước" hidden><i class="fa-solid fa-backward-step" aria-hidden="true"></i></button>
+          <button class="ls-btn ls-play" id="ls-play" type="button" aria-label="Phát"><i class="fa-solid fa-play" id="ls-play-icon" aria-hidden="true"></i></button>
+          <button class="ls-btn" id="ls-next" type="button" aria-label="Bài tiếp" hidden><i class="fa-solid fa-forward-step" aria-hidden="true"></i></button>
+        </div>
+        <audio id="love-audio" preload="metadata"></audio>
+      </section>
       <section class="love-card love-now" id="love-now" aria-label="Cô ấy đang làm gì" hidden></section>
       <section class="love-card love-letter" id="love-letter" aria-label="Lời nhắn" hidden></section>
       <section class="love-gallery" id="love-gallery" aria-label="Ảnh" hidden></section>
