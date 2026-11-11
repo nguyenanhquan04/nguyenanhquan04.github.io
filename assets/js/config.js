@@ -83,6 +83,7 @@ window.PROFILE = {
       music: {
         label: "Bài hát dành cho em",
         tracks: [
+          { src: "assets/media/La Maritza (Piano Version) - Sylvie Vartan.mp3", title: "La Maritza (Piano Version)", artist: "Sylvie Vartan", cover: "" },
           // { src: "assets/media/ten-file.mp3", title: "Tên bài", artist: "Ca sĩ", cover: "" },
         ],
       },

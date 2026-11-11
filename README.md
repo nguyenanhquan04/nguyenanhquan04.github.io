@@ -49,7 +49,16 @@ Khi Lanyard có dữ liệu, tên và avatar trên trang sẽ lấy từ Discord
 
 ### Thẻ "Người yêu tôi"
 
-Mục `lover` trong `config.js` hiện một thẻ màu hồng với trạng thái Discord trực tiếp của người ấy: online/offline, custom status, bài đang nghe hoặc game đang chơi. Người ấy cũng phải tham gia server Lanyard ở trên. Nếu chưa tham gia, thẻ chỉ hiện tên và link tới hồ sơ Discord. Để `discordId: ""` nếu muốn ẩn thẻ.
+Mục `lover` trong `config.js` hiện một thẻ màu hồng với trạng thái Discord trực tiếp của người ấy: online/offline, custom status, bài đang nghe hoặc game đang chơi. Người ấy cũng phải tham gia server Lanyard ở trên. Nếu chưa tham gia, thẻ chỉ hiện tên. Để `discordId: ""` nếu muốn ẩn thẻ.
+
+Bấm vào thẻ sẽ mở trang riêng màu hồng kem của người ấy (link thẳng: `/#love`). Cấu hình trong `lover.page`:
+
+- `since`: ngày bắt đầu yêu (`"2026-10-23"`) → bộ đếm "X ngày bên nhau"
+- `message`, `letterTitle`: lá thư
+- `photos`: ảnh kiểu polaroid
+- `music.tracks`: bài hát riêng. Khi trang mở, nhạc chính tạm dừng và bài này phát; đóng trang thì nhạc chính phát tiếp
+
+Mục nào để trống sẽ được ẩn. Đặt `page: false` để thẻ mở hồ sơ Discord như cũ.
 
 ### Thêm bài vào playlist
 
