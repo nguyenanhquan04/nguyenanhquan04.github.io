@@ -71,11 +71,27 @@ window.PROFILE = {
     name: "",               // Tên hiển thị. Để trống = lấy tên Discord của người ấy
   },
 
-  /* ---------- Nhạc nền ---------- */
+  /* ---------- Trình phát nhạc (playlist, đĩa xoay) ----------
+   * Thêm bài: tải file mp3 vào assets/media/ rồi thêm một dòng vào "tracks".
+   * - src:    đường dẫn file nhạc (bắt buộc)
+   * - title:  tên bài. Để trống = lấy tên file
+   * - artist: ca sĩ (không bắt buộc)
+   * - cover:  ảnh bìa hiện ở giữa đĩa (URL hoặc "assets/media/anh.jpg"). Để trống = nhãn đĩa màu
+   * Xoá hết bài (tracks: []) để ẩn trình phát.
+   */
   music: {
-    src: "assets/media/Midnight - BEAST.mp3", // Để trống = không có nhạc
-    title: "Midnight - BEAST", // Tên bài hiển thị trên trình phát
-    volume: 0.35,           // 0 → 1
+    volume: 0.35,           // Âm lượng ban đầu, 0 → 1
+    shuffle: false,         // true = trộn bài
+    repeat: "all",          // "all" = lặp cả danh sách | "one" = lặp một bài | "off" = hết danh sách thì dừng
+    tracks: [
+      {
+        src: "assets/media/Midnight - BEAST.mp3",
+        title: "Midnight (별 헤는 밤)",
+        artist: "BEAST",
+        cover: "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/23/1a/63/231a634a-e6d3-a22d-d9a6-3281d4b91de8/01_Midnight.jpg/300x300bb.jpg",
+      },
+      // { src: "assets/media/ten-file.mp3", title: "Tên bài", artist: "Ca sĩ", cover: "" },
+    ],
   },
 
   /* ---------- Nền ---------- */

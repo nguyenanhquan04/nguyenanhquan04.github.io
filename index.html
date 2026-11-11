@@ -17,7 +17,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" referrerpolicy="no-referrer" />
-  <link rel="stylesheet" href="assets/css/style.css" />
+  <!-- Tăng số ?v= mỗi khi sửa CSS/JS để người xem nhận bản mới ngay, không phải đợi cache 10 phút -->
+  <link rel="stylesheet" href="assets/css/style.css?v=2" />
 </head>
 <body>
   <!-- Nền: video / ảnh / gradient + lớp hạt -->
@@ -33,17 +34,6 @@
   <button class="enter" id="enter" type="button" hidden>
     <span class="enter-text" id="enter-text">nhấn để vào</span>
   </button>
-
-  <!-- Trình phát nhạc nhỏ -->
-  <div class="player" id="player" hidden>
-    <button class="player-btn" id="player-toggle" type="button" aria-label="Phát / tạm dừng">
-      <i class="fa-solid fa-play" id="player-icon"></i>
-    </button>
-    <div class="player-title" id="player-title-wrap"><span id="player-title"></span></div>
-    <i class="fa-solid fa-volume-high player-vol-icon" aria-hidden="true"></i>
-    <input class="player-vol" id="player-volume" type="range" min="0" max="1" step="0.01" aria-label="Âm lượng" />
-    <audio id="audio" loop preload="auto"></audio>
-  </div>
 
   <main class="stage" id="stage">
     <article class="card" id="card">
@@ -64,6 +54,66 @@
 
       <section class="lover" id="lover" aria-label="Người yêu"></section>
 
+      <!-- Trình phát playlist có đĩa xoay. Danh sách bài nằm trong assets/js/config.js -->
+      <section class="music" id="music" aria-label="Trình phát nhạc" hidden>
+        <div class="music-main">
+          <div class="turntable" aria-hidden="true">
+            <div class="disc">
+              <div class="disc-label">
+                <img id="disc-cover" alt="" hidden />
+                <i class="fa-solid fa-music" id="disc-icon"></i>
+              </div>
+            </div>
+            <div class="disc-sheen"></div>
+            <div class="tonearm"></div>
+          </div>
+
+          <div class="music-body">
+            <div class="music-label">
+              <span class="eq" aria-hidden="true"><i></i><i></i><i></i></span>
+              <span id="music-state">Tạm dừng</span>
+              <span class="music-count" id="music-count"></span>
+            </div>
+            <div class="music-title" id="music-title"></div>
+            <div class="music-artist" id="music-artist"></div>
+            <input class="range seek" id="seek" type="range" min="0" max="1000" step="1" value="0" aria-label="Tua bài hát" />
+            <div class="times"><span id="t-cur">0:00</span><span id="t-dur">0:00</span></div>
+          </div>
+        </div>
+
+        <div class="music-controls">
+          <button class="mbtn" id="btn-list" type="button" aria-label="Danh sách phát" data-tip="Danh sách phát" aria-expanded="false" aria-controls="playlist">
+            <i class="fa-solid fa-list-ul" aria-hidden="true"></i>
+          </button>
+          <div class="transport">
+            <button class="mbtn" id="btn-shuffle" type="button" aria-label="Trộn bài" data-tip="Trộn bài" aria-pressed="false">
+              <i class="fa-solid fa-shuffle" aria-hidden="true"></i>
+            </button>
+            <button class="mbtn" id="btn-prev" type="button" aria-label="Bài trước" data-tip="Bài trước">
+              <i class="fa-solid fa-backward-step" aria-hidden="true"></i>
+            </button>
+            <button class="mbtn mbtn-play" id="btn-play" type="button" aria-label="Phát">
+              <i class="fa-solid fa-play" id="play-icon" aria-hidden="true"></i>
+            </button>
+            <button class="mbtn" id="btn-next" type="button" aria-label="Bài tiếp" data-tip="Bài tiếp">
+              <i class="fa-solid fa-forward-step" aria-hidden="true"></i>
+            </button>
+            <button class="mbtn" id="btn-repeat" type="button" aria-label="Lặp lại">
+              <i class="fa-solid fa-repeat" aria-hidden="true"></i><span class="repeat-one" aria-hidden="true">1</span>
+            </button>
+          </div>
+          <div class="vol">
+            <button class="mbtn" id="btn-mute" type="button" aria-label="Tắt tiếng" data-tip="Tắt tiếng">
+              <i class="fa-solid fa-volume-high" id="vol-icon" aria-hidden="true"></i>
+            </button>
+            <input class="range vol-range" id="vol" type="range" min="0" max="1" step="0.01" aria-label="Âm lượng" />
+          </div>
+        </div>
+
+        <ol class="playlist" id="playlist" hidden></ol>
+        <audio id="audio" preload="metadata"></audio>
+      </section>
+
       <section class="activity" id="activity" aria-label="Hoạt động"></section>
 
       <section class="links" id="links" aria-label="Liên kết"></section>
@@ -75,7 +125,7 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <div class="cursor" id="cursor" aria-hidden="true"></div>
 
-  <script src="assets/js/config.js"></script>
-  <script src="assets/js/main.js"></script>
+  <script src="assets/js/config.js?v=2"></script>
+  <script src="assets/js/main.js?v=2"></script>
 </body>
 </html>

@@ -188,47 +188,288 @@
   /* ------------------------------------------------------------------ */
   /* Music                                                               */
   /* ------------------------------------------------------------------ */
+  // Playlist player with a spinning record. Tracks come from cfg.music.tracks
+  // (or the older single-track cfg.music.src / cfg.music.title form).
   const music = (() => {
     const m = cfg.music || {};
+    const fileTitle = (src) => decodeURIComponent(String(src).split("/").pop().replace(/\.[^.]+$/, ""));
+    const raw = Array.isArray(m.tracks) && m.tracks.length ? m.tracks : m.src ? [{ src: m.src, title: m.title }] : [];
+    const tracks = raw
+      .filter((t) => t && t.src)
+      .map((t) => ({ src: t.src, title: t.title || fileTitle(t.src), artist: t.artist || "", cover: t.cover || "" }));
+
+    const root = $("#music");
+    if (!tracks.length) return { play() {} };
+    root.hidden = false;
+
     const audio = $("#audio");
-    if (!m.src) return { play() {} };
-
-    const player = $("#player");
-    const vol = $("#player-volume");
-    const iconEl = $("#player-icon");
-    const titleWrap = $("#player-title-wrap");
-
-    audio.src = m.src;
-    audio.volume = clamp(m.volume ?? 0.35, 0, 1);
-    vol.value = audio.volume;
-    $("#player-title").textContent = m.title || "";
-    player.hidden = false;
-
-    const sync = () => {
-      iconEl.className = audio.paused ? "fa-solid fa-play" : "fa-solid fa-pause";
+    const el = {
+      cover: $("#disc-cover"),
+      coverIcon: $("#disc-icon"),
+      state: $("#music-state"),
+      count: $("#music-count"),
+      title: $("#music-title"),
+      artist: $("#music-artist"),
+      seek: $("#seek"),
+      cur: $("#t-cur"),
+      dur: $("#t-dur"),
+      play: $("#btn-play"),
+      playIcon: $("#play-icon"),
+      prev: $("#btn-prev"),
+      next: $("#btn-next"),
+      shuffle: $("#btn-shuffle"),
+      repeat: $("#btn-repeat"),
+      mute: $("#btn-mute"),
+      volIcon: $("#vol-icon"),
+      vol: $("#vol"),
+      listBtn: $("#btn-list"),
+      list: $("#playlist"),
     };
-    audio.addEventListener("play", sync);
-    audio.addEventListener("pause", sync);
-    $("#player-toggle").addEventListener("click", () => {
-      if (audio.paused) audio.play().catch(() => {});
-      else audio.pause();
+
+    const REPEAT_MODES = ["all", "one", "off"];
+    const REPEAT_LABEL = { all: "Lặp lại: cả danh sách", one: "Lặp lại: một bài", off: "Lặp lại: tắt" };
+    let repeat = REPEAT_MODES.includes(m.repeat) ? m.repeat : "all";
+    let shuffle = !!m.shuffle;
+    let index = 0;
+    let order = [];
+    let seeking = false;
+    let failures = 0;
+
+    // Play order: natural, or shuffled with `first` kept at the front.
+    function buildOrder(first) {
+      order = tracks.map((_, i) => i);
+      if (!shuffle) return;
+      for (let i = order.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [order[i], order[j]] = [order[j], order[i]];
+      }
+      if (first != null) order = [first, ...order.filter((i) => i !== first)];
+    }
+
+    const setRangeFill = (input) => {
+      const min = +input.min || 0;
+      const max = +input.max || 1;
+      input.style.setProperty("--p", `${((+input.value - min) / (max - min)) * 100}%`);
+    };
+
+    // Playlist items
+    const items = tracks.map((t, i) =>
+      h(
+        "li",
+        {},
+        h(
+          "button",
+          { class: "pl-item", type: "button", onclick: () => load(i, true) },
+          h("span", { class: "pl-num" }, h("span", { class: "n" }, String(i + 1)), h("span", { class: "eq", "aria-hidden": "true" }, h("i"), h("i"), h("i"))),
+          h("span", { class: "pl-text" }, h("span", { class: "pl-title" }, t.title), t.artist ? h("span", { class: "pl-artist" }, t.artist) : null)
+        )
+      )
+    );
+    el.list.replaceChildren(...items);
+
+    function setMediaSession(t) {
+      if (!("mediaSession" in navigator) || typeof MediaMetadata === "undefined") return;
+      try {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: t.title,
+          artist: t.artist,
+          album: displayName(),
+          artwork: t.cover ? [{ src: new URL(t.cover, location.href).href, sizes: "300x300" }] : [],
+        });
+      } catch { /* unsupported artwork etc. */ }
+    }
+
+    function load(i, autoplay) {
+      index = i;
+      const t = tracks[i];
+      audio.src = t.src;
+      el.title.textContent = t.title;
+      el.artist.textContent = t.artist;
+      el.artist.hidden = !t.artist;
+      el.count.textContent = tracks.length > 1 ? `${i + 1}/${tracks.length}` : "";
+
+      if (t.cover) {
+        el.cover.onerror = () => {
+          el.cover.hidden = true;
+          el.coverIcon.hidden = false;
+        };
+        el.cover.src = t.cover;
+        el.cover.hidden = false;
+        el.coverIcon.hidden = true;
+      } else {
+        el.cover.removeAttribute("src");
+        el.cover.hidden = true;
+        el.coverIcon.hidden = false;
+      }
+
+      el.seek.value = 0;
+      setRangeFill(el.seek);
+      el.cur.textContent = "0:00";
+      el.dur.textContent = "0:00";
+      items.forEach((li, k) => {
+        const b = li.firstChild;
+        b.classList.toggle("is-current", k === i);
+        if (k === i) b.setAttribute("aria-current", "true");
+        else b.removeAttribute("aria-current");
+      });
+      setMediaSession(t);
+      if (autoplay) play();
+    }
+
+    function play() {
+      return audio.play().catch(() => {});
+    }
+
+    function next(auto) {
+      if (auto && repeat === "one") {
+        audio.currentTime = 0;
+        play();
+        return;
+      }
+      const pos = order.indexOf(index);
+      if (pos >= order.length - 1) {
+        if (auto && repeat === "off") {
+          audio.currentTime = 0;
+          return; // end of playlist: stay paused on the last track
+        }
+        if (shuffle) buildOrder();
+        load(order[0], true);
+      } else {
+        load(order[pos + 1], true);
+      }
+    }
+
+    function prev() {
+      if (audio.currentTime > 3) {
+        audio.currentTime = 0;
+        return;
+      }
+      const pos = order.indexOf(index);
+      load(order[(pos - 1 + order.length) % order.length], true);
+    }
+
+    function syncPlayState() {
+      const playing = !audio.paused;
+      root.classList.toggle("is-playing", playing);
+      el.playIcon.className = playing ? "fa-solid fa-pause" : "fa-solid fa-play";
+      el.play.setAttribute("aria-label", playing ? "Tạm dừng" : "Phát");
+      el.state.textContent = playing ? "Đang phát" : "Tạm dừng";
+      if ("mediaSession" in navigator) navigator.mediaSession.playbackState = playing ? "playing" : "paused";
+    }
+
+    function syncVolume() {
+      const v = audio.muted ? 0 : audio.volume;
+      el.volIcon.className = `fa-solid ${v === 0 ? "fa-volume-xmark" : v < 0.5 ? "fa-volume-low" : "fa-volume-high"}`;
+      const label = audio.muted ? "Bật tiếng" : "Tắt tiếng";
+      el.mute.setAttribute("aria-label", label);
+      el.mute.dataset.tip = label;
+      el.vol.value = v;
+      setRangeFill(el.vol);
+    }
+
+    function syncModes() {
+      el.shuffle.classList.toggle("is-on", shuffle);
+      el.shuffle.setAttribute("aria-pressed", String(shuffle));
+      el.repeat.classList.toggle("is-on", repeat !== "off");
+      el.repeat.dataset.repeat = repeat;
+      el.repeat.setAttribute("aria-label", REPEAT_LABEL[repeat]);
+      el.repeat.dataset.tip = REPEAT_LABEL[repeat];
+    }
+
+    // Audio events
+    audio.addEventListener("play", syncPlayState);
+    audio.addEventListener("pause", syncPlayState);
+    audio.addEventListener("ended", () => next(true));
+    audio.addEventListener("playing", () => (failures = 0));
+    audio.addEventListener("loadedmetadata", () => {
+      el.dur.textContent = fmtTime(audio.duration * 1000);
     });
-    vol.addEventListener("input", () => {
-      audio.volume = +vol.value;
+    audio.addEventListener("timeupdate", () => {
+      if (seeking || !audio.duration) return;
+      el.seek.value = Math.round((audio.currentTime / audio.duration) * 1000);
+      setRangeFill(el.seek);
+      el.cur.textContent = fmtTime(audio.currentTime * 1000);
+    });
+    audio.addEventListener("error", () => {
+      console.warn("[bio] Không phát được:", tracks[index].src);
+      failures += 1;
+      if (failures < tracks.length && tracks.length > 1) setTimeout(() => next(false), 800);
+    });
+    audio.addEventListener("volumechange", syncVolume);
+
+    // Controls
+    el.play.addEventListener("click", () => (audio.paused ? play() : audio.pause()));
+    el.next.addEventListener("click", () => next(false));
+    el.prev.addEventListener("click", prev);
+    el.shuffle.addEventListener("click", () => {
+      shuffle = !shuffle;
+      buildOrder(index);
+      syncModes();
+    });
+    el.repeat.addEventListener("click", () => {
+      repeat = REPEAT_MODES[(REPEAT_MODES.indexOf(repeat) + 1) % REPEAT_MODES.length];
+      syncModes();
+    });
+    el.mute.addEventListener("click", () => {
+      if (audio.muted || audio.volume === 0) {
+        audio.muted = false;
+        if (audio.volume === 0) audio.volume = 0.35;
+      } else {
+        audio.muted = true;
+      }
+    });
+    el.vol.addEventListener("input", () => {
+      audio.volume = +el.vol.value;
+      audio.muted = false;
+    });
+    el.seek.addEventListener("input", () => {
+      seeking = true;
+      setRangeFill(el.seek);
+      if (audio.duration) el.cur.textContent = fmtTime((+el.seek.value / 1000) * audio.duration * 1000);
+    });
+    el.seek.addEventListener("change", () => {
+      if (audio.duration) audio.currentTime = (+el.seek.value / 1000) * audio.duration;
+      seeking = false;
+    });
+    el.listBtn.addEventListener("click", () => {
+      const open = el.list.hidden;
+      el.list.hidden = !open;
+      el.listBtn.setAttribute("aria-expanded", String(open));
+      el.listBtn.classList.toggle("is-on", open);
     });
 
-    requestAnimationFrame(() => {
-      if (titleWrap.scrollWidth > titleWrap.clientWidth + 2) titleWrap.classList.add("is-marquee");
-    });
+    // OS media keys / lock-screen controls
+    if ("mediaSession" in navigator) {
+      const ms = navigator.mediaSession;
+      const set = (action, fn) => {
+        try {
+          ms.setActionHandler(action, fn);
+        } catch { /* action not supported */ }
+      };
+      set("play", play);
+      set("pause", () => audio.pause());
+      set("previoustrack", prev);
+      set("nexttrack", () => next(false));
+      set("seekto", (d) => {
+        if (d.seekTime != null) audio.currentTime = d.seekTime;
+      });
+    }
+
+    audio.volume = clamp(m.volume ?? 0.35, 0, 1);
+    buildOrder();
+    load(order[0], false);
+    syncModes();
+    syncVolume();
+    syncPlayState();
 
     return {
       play() {
         audio.play().catch(() => {
           // Autoplay blocked (no enter screen): start on the first click outside the player.
           const once = (e) => {
-            if (e.target.closest("#player")) return;
+            if (e.target.closest("#music")) return;
             document.removeEventListener("pointerdown", once);
-            audio.play().catch(() => {});
+            play();
           };
           document.addEventListener("pointerdown", once);
         });
@@ -483,7 +724,11 @@
       const py = (e.clientY - r.top) / r.height;
       card.style.setProperty("--mx", `${px * 100}%`);
       card.style.setProperty("--my", `${py * 100}%`);
-      if (tilt) card.style.transform = `rotateX(${(0.5 - py) * 7}deg) rotateY(${(px - 0.5) * 9}deg)`;
+      if (!tilt) return;
+      // Keep the card flat while the pointer is on the player so sliders are easy to drag.
+      card.style.transform = e.target.closest("#music")
+        ? ""
+        : `rotateX(${(0.5 - py) * 7}deg) rotateY(${(px - 0.5) * 9}deg)`;
     });
     card.addEventListener("pointerleave", () => {
       card.classList.remove("is-tilting");
@@ -947,7 +1192,6 @@
   /* ------------------------------------------------------------------ */
   function reveal() {
     $("#stage").classList.add("is-visible");
-    $("#player").classList.add("is-visible");
     startTypewriter();
     music.play();
   }

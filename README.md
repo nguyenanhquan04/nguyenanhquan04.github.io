@@ -14,7 +14,7 @@ Trang bio-link tĩnh, chỉ dùng HTML/CSS/JS thuần, không cần build. Chạ
   - **Discord**: trạng thái online, custom status, game/app đang dùng kèm thời gian
   - **Spotify**: bài đang nghe, ảnh album, thanh tiến trình
   - **GitHub**: số repo, follower, tổng sao
-- Trình phát nhạc nền (phát/tạm dừng, âm lượng)
+- Trình phát playlist có đĩa than xoay và kim đĩa: bài trước/tiếp, tua, trộn bài, lặp lại, âm lượng, danh sách bài, điều khiển bằng phím media của máy
 - Tự co giãn trên điện thoại, tôn trọng cài đặt "giảm chuyển động" của hệ điều hành
 
 ## Cấu trúc
@@ -51,16 +51,31 @@ Khi Lanyard có dữ liệu, tên và avatar trên trang sẽ lấy từ Discord
 
 Mục `lover` trong `config.js` hiện một thẻ màu hồng với trạng thái Discord trực tiếp của người ấy: online/offline, custom status, bài đang nghe hoặc game đang chơi. Người ấy cũng phải tham gia server Lanyard ở trên. Nếu chưa tham gia, thẻ chỉ hiện tên và link tới hồ sơ Discord. Để `discordId: ""` nếu muốn ẩn thẻ.
 
-### Thêm nhạc nền / video nền
+### Thêm bài vào playlist
 
-Chép file vào `assets/media/` rồi ghi đường dẫn vào config:
+1. Tải file mp3 lên thư mục `assets/media/` (trên GitHub: **Add file → Upload files**).
+2. Thêm một dòng vào `music.tracks` trong `config.js`:
 
 ```js
-music: { src: "assets/media/song.mp3", title: "Tên bài hát", volume: 0.35 },
+tracks: [
+  { src: "assets/media/Midnight - BEAST.mp3", title: "Midnight (별 헤는 밤)", artist: "BEAST", cover: "https://..." },
+  { src: "assets/media/bai-moi.mp3", title: "Tên bài", artist: "Ca sĩ", cover: "assets/media/bia.jpg" },
+],
+```
+
+`cover` là ảnh bìa hiện ở giữa đĩa. Để trống thì đĩa dùng nhãn màu. `shuffle` và `repeat` (`"all"`, `"one"`, `"off"`) đặt chế độ mặc định khi mở trang.
+
+### Video / ảnh nền
+
+```js
 background: { video: "assets/media/bg.mp4", ... },
 ```
 
 Nên giữ file nhỏ (nhạc mp3 vài MB, video mp4 dưới ~15 MB) để trang tải nhanh. GitHub chặn file trên 100 MB.
+
+### Sau khi sửa CSS/JS
+
+Tăng số `?v=` ở cuối các đường dẫn `style.css`, `config.js`, `main.js` trong `index.html` (ví dụ `?v=2` → `?v=3`). Người xem sẽ nhận bản mới ngay, không phải đợi cache 10 phút của GitHub Pages.
 
 ## Đăng lên GitHub Pages
 
