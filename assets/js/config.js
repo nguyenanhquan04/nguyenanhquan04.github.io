@@ -76,7 +76,7 @@ window.PROFILE = {
       since: "2026-10-23",  // Ngày bắt đầu yêu, dạng "2025-02-14" → hiện bộ đếm "bên nhau X ngày"
       letterTitle: "Gửi em",
       message: "",          // Lời nhắn. Xuống dòng bằng \n
-      photos: [],           // Ảnh: ["assets/media/anh1.jpg", "assets/media/anh2.jpg"]
+      photos: ["assets/media/1.jpg", "assets/media/2.jpg"], // Ảnh hiện kiểu polaroid
 
       // Nhạc riêng: khi trang của cô ấy mở, nhạc chính tạm dừng và bài này phát.
       // Đóng trang thì nhạc chính phát tiếp. Để tracks: [] nếu không dùng.
