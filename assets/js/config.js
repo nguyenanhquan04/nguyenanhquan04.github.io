@@ -90,7 +90,7 @@ window.PROFILE = {
     },
   },
 
-  /* ---------- Thẻ game (thẻ bên phải) ----------
+  /* ---------- Khung game ----------
    * Genshin Impact và Honkai: Star Rail: chỉ cần điền UID. GitHub Actions lấy stats từ
    * Enka.Network mỗi 6 giờ (cấp, thành tựu, La Hoàn, nhân vật trưng bày...).
    * Trong game nhớ bật hiện nhân vật trưng bày / chi tiết nhân vật trên hồ sơ.
@@ -111,25 +111,27 @@ window.PROFILE = {
         server: "",         // ví dụ "Asia" / "SEA"
         nickname: "",
         level: "",          // Union Level
+        maxLevel: "",       // Cấp tối đa, để vẽ thanh EXP (Genshin 60 và HSR 70 đã có sẵn)
         stats: [],          // ví dụ [{ label: "Tháp Ảo Ảnh", value: "Tầng 4" }]
         characters: [],     // ví dụ ["Camellya", "Jinhsi"]
       },
-      { id: "genshin", name: "Genshin Impact", short: "Genshin", uid: "815953629", server: "", stats: [] },
+      // nickname: tên trong game. Để trống = lấy từ Enka (tên Genshin hiện tại toàn ký tự vô hình nên không hiện)
+      { id: "genshin", name: "Genshin Impact", short: "Genshin", uid: "815953629", server: "", nickname: "", stats: [] },
       { id: "hsr", name: "Honkai: Star Rail", short: "HSR", uid: "801505978", server: "", stats: [] },
     ],
   },
 
-  /* ---------- Thẻ nhạc (thẻ bên trái, kiểu Zing MP3) ----------
+  /* ---------- Máy nghe nhạc cassette ----------
    * Thêm bài: tải file mp3 vào assets/media/ rồi thêm một dòng vào "tracks".
    * - src:    đường dẫn file nhạc (bắt buộc)
    * - title:  tên bài. Để trống = lấy tên file
    * - artist: ca sĩ (không bắt buộc)
-   * - cover:  ảnh bìa (URL hoặc "assets/media/anh.jpg"): hiện ở đĩa tròn, trong danh sách,
-   *           và làm màu nền mờ của thẻ. Để trống = màu gradient
-   * Xoá hết bài (tracks: []) để ẩn thẻ nhạc.
+   * - cover:  ảnh bìa (URL hoặc "assets/media/anh.jpg"): hiện trên nhãn băng cassette và
+   *           trong danh sách. Để trống = ô màu
+   * Xoá hết bài (tracks: []) để ẩn máy nghe nhạc.
    */
   music: {
-    playlistName: "Playlist của tôi", // Dòng "Đang phát từ ..." ở đầu thẻ
+    playlistName: "Playlist của tôi", // Dòng "Đang phát từ ..." dưới băng cassette
     volume: 0.35,           // Âm lượng ban đầu, 0 → 1
     shuffle: false,         // true = trộn bài
     repeat: "all",          // "all" = lặp cả danh sách | "one" = lặp một bài | "off" = hết danh sách thì dừng
@@ -155,17 +157,15 @@ window.PROFILE = {
 
   /* ---------- Giao diện & hiệu ứng ---------- */
   theme: {
-    accent: "#a78bfa",      // Màu chủ đạo
-    accent2: "#38bdf8",     // Màu phụ (gradient)
-    cardOpacity: 0.38,      // Độ đậm nền thẻ, 0 → 1
-    blur: 18,               // Độ mờ kính (px)
-    nameEffect: "glow",     // "glow" | "gradient" | "none"
+    accent: "#a78bfa",      // Màu chủ đạo (viền avatar, nhãn đĩa, thanh trượt...)
+    accent2: "#38bdf8",     // Màu phụ
+    nameEffect: "glow",     // Tên: "glow" = phát sáng | "gradient" = hai màu kiểu chữ game | "none"
   },
 
   effects: {
     enterScreen: true,      // Màn hình "nhấn để vào" (cần nếu muốn tự phát nhạc)
     enterText: "nhấn để vào",
-    cursor: true,           // Con trỏ phát sáng
+    cursor: true,           // Con trỏ chuột kiểu pixel
     typewriter: true,       // Hiệu ứng gõ chữ cho bio
     animatedTitle: true,    // Tiêu đề tab tự gõ chữ
   },

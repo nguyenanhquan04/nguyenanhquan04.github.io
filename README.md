@@ -4,19 +4,16 @@ Trang bio-link tĩnh, chỉ dùng HTML/CSS/JS thuần, không cần build. Chạ
 
 ## Tính năng
 
-- Màn hình "nhấn để vào" (để trình duyệt cho phép tự phát nhạc)
-- Nền bầu trời đêm có dải ngân hà, sao lấp lánh và thỉnh thoảng có sao băng (hoặc tuyết rơi, video, ảnh)
-- Thẻ kính mờ nghiêng 3D theo chuột, con trỏ phát sáng
-- Avatar có chấm trạng thái Discord và khung trang trí avatar (nếu bạn có)
-- Tên phát sáng / gradient, huy hiệu có tooltip, bio gõ chữ tự động, tiêu đề tab tự gõ
-- Hàng icon mạng xã hội (bấm để mở link hoặc sao chép tên Discord)
-- Thẻ hoạt động trực tiếp, tự cập nhật không cần tải lại trang:
-  - **Discord**: trạng thái online, custom status, game/app đang dùng kèm thời gian
-  - **Spotify**: bài đang nghe, ảnh album, thanh tiến trình
-  - **GitHub**: số repo, follower, tổng sao
-- Bố cục 3 thẻ xoay 3D: **Nhạc** (trái) · **Hồ sơ** (giữa) · **Game** (phải). Bấm thẻ bên cạnh, bấm tab phía trên, vuốt ngang trên điện thoại hoặc dùng phím ← →
-- Thẻ nhạc kiểu Zing MP3: bìa tròn xoay, nền mờ theo màu ảnh bìa, tua, trộn bài, lặp lại, âm lượng, danh sách bài bên dưới, điều khiển bằng phím media của máy
-- Thẻ game WuWa · Genshin · HSR: tab chuyển có hiệu ứng lật, stats, nhân vật trưng bày, chấm "Đang chơi" khi Discord thấy bạn đang mở game
+Giao diện kiểu game pixel 8-bit, một trang đơn:
+
+- Màn hình "nhấn để vào" kiểu PRESS START (để trình duyệt cho phép phát nhạc)
+- Nền bầu trời đêm pixel: dải màu, trăng khuyết, đồi, sao vuông lấp lánh và thỉnh thoảng có sao băng (hoặc tuyết rơi, video, ảnh)
+- Các khung viền pixel kiểu menu RPG, con trỏ chuột pixel, chữ pixel có đủ dấu tiếng Việt (VT323, Tiny5)
+- **Người chơi 1**: avatar Discord trong khung tròn pixel, chấm trạng thái, huy hiệu, bio gõ chữ trong hộp thoại RPG, mạng xã hội
+- **Người yêu tôi**: thẻ hồng, bấm vào mở trang riêng màu hồng kem của cô ấy
+- **Máy nghe nhạc cassette**: cuộn băng quay khi phát, băng chạy từ cuộn trái sang cuộn phải theo bài hát, tua, trộn bài, lặp lại, âm lượng, danh sách bài có con trỏ ▶ kiểu menu game, điều khiển bằng phím media của máy
+- **Game tôi chơi** (WuWa · Genshin · HSR): tab chuyển có hiệu ứng quét màn hình 8-bit, thanh EXP cho cấp, bảng chỉ số kiểu RPG, nhân vật trưng bày, chấm "Đang chơi" khi Discord thấy bạn đang mở game
+- **Đang làm gì**: Discord, game đang mở, Spotify (có thanh tiến trình), GitHub; tự cập nhật không cần tải lại trang
 - Tự co giãn trên điện thoại, tôn trọng cài đặt "giảm chuyển động" của hệ điều hành
 
 ## Cấu trúc

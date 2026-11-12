@@ -54,6 +54,8 @@
   }
 
   const icon = (cls) => h("i", { class: cls, "aria-hidden": "true" });
+  // pixelarticons (24px pixel icons) for the retro UI chrome
+  const pxIcon = (name) => h("i", { class: `pixelart-icons-font-${name}`, "aria-hidden": "true" });
 
   function graphemes(str) {
     if (window.Intl && Intl.Segmenter) {
@@ -103,8 +105,6 @@
     const root = document.documentElement.style;
     if (t.accent) root.setProperty("--accent", t.accent);
     if (t.accent2) root.setProperty("--accent2", t.accent2);
-    if (t.cardOpacity != null) root.setProperty("--card-opacity", clamp(+t.cardOpacity, 0, 1));
-    if (t.blur != null) root.setProperty("--blur", `${+t.blur}px`);
     if (b.dim != null) root.setProperty("--dim", clamp(+b.dim, 0, 1));
   }
 
@@ -154,10 +154,15 @@
     return { ctx, size };
   }
 
-  // Night sky: twinkling stars of different sizes/colours, and every few seconds a shooting star.
+  // Pixel night sky: square stars on a 3px grid that twinkle in steps, bright ones flash into a
+  // "+" sparkle, and every few seconds a shooting star leaves a trail of fading squares.
   function startSky({ shooting = true, still = false } = {}) {
-    const COLORS = ["255,255,255", "255,255,255", "255,255,255", "214,228,255", "255,238,214", "232,222,255"];
+    const G = 3; // one sky pixel, in CSS px
+    const COLORS = ["255,255,255", "255,255,255", "255,255,255", "205,222,255", "255,236,200", "226,214,255"];
+    const LEVELS = [0.25, 0.5, 0.75, 1]; // brightness steps, like a limited palette
     const rand = (a, b) => a + Math.random() * (b - a);
+    const snap = (v) => Math.round(v / G) * G;
+    const step = (a) => LEVELS.reduce((best, l) => (Math.abs(l - a) < Math.abs(best - a) ? l : best), LEVELS[0]);
     let stars = [];
     let meteors = [];
     let nextMeteor = 0;
@@ -166,17 +171,17 @@
     let size = null;
 
     const c = canvas2d(({ w, h }) => {
-      const count = Math.round(clamp((w * h) / 4200, 80, 380));
+      const count = Math.round(clamp((w * h) / 5200, 70, 300));
       stars = Array.from({ length: count }, () => {
-        const bright = Math.random() < 0.06;
+        const bright = Math.random() < 0.07;
         return {
-          x: Math.random() * w,
-          y: Math.random() * h,
-          r: bright ? rand(1.1, 1.8) : rand(0.3, 1.05),
+          x: snap(Math.random() * w),
+          y: snap(Math.random() * h * 0.92),
+          big: !bright && Math.random() < 0.12, // 2x2 star
           c: COLORS[Math.floor(Math.random() * COLORS.length)],
-          base: bright ? rand(0.75, 1) : rand(0.25, 0.75),
-          amp: rand(0.15, 0.5),
-          speed: rand(0.0005, 0.0022),
+          base: bright ? rand(0.75, 1) : rand(0.3, 0.8),
+          amp: rand(0.2, 0.5),
+          speed: rand(0.0006, 0.002),
           phase: Math.random() * Math.PI * 2,
           bright,
         };
@@ -186,34 +191,49 @@
     if (!c) return;
     ({ ctx, size } = c);
 
-    function dot(x, y, r, color) {
+    const px = (x, y, n, color) => {
       ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.fill();
-    }
+      ctx.fillRect(x, y, G * n, G * n);
+    };
 
     function drawStars(t) {
       if (still) ctx.clearRect(0, 0, size.w, size.h);
       for (const s of stars) {
-        const a = still ? s.base : clamp(s.base + Math.sin(s.phase + t * s.speed) * s.amp, 0.05, 1);
-        dot(s.x, s.y, s.r, `rgba(${s.c},${a.toFixed(3)})`);
-        if (s.bright) dot(s.x, s.y, s.r * 3.4, `rgba(${s.c},${(a * 0.16).toFixed(3)})`); // soft halo
+        const wave = still ? 0 : Math.sin(s.phase + t * s.speed);
+        const a = step(clamp(s.base + wave * s.amp, 0.1, 1));
+        const col = `rgba(${s.c},${a})`;
+        if (s.bright && wave > 0.55) {
+          // sparkle: a plus sign, with a dim outer tip at the peak
+          px(s.x, s.y, 1, col);
+          px(s.x - G, s.y, 1, col);
+          px(s.x + G, s.y, 1, col);
+          px(s.x, s.y - G, 1, col);
+          px(s.x, s.y + G, 1, col);
+          if (wave > 0.85) {
+            const dim = `rgba(${s.c},${step(a * 0.5)})`;
+            px(s.x - 2 * G, s.y, 1, dim);
+            px(s.x + 2 * G, s.y, 1, dim);
+            px(s.x, s.y - 2 * G, 1, dim);
+            px(s.x, s.y + 2 * G, 1, dim);
+          }
+        } else {
+          px(s.x, s.y, s.big ? 2 : 1, col);
+        }
       }
     }
 
     function spawnMeteor() {
       const dir = Math.random() < 0.5 ? -1 : 1;
-      const angle = rand(0.3, 0.62); // 17°–35° below horizontal
-      const speed = rand(0.9, 1.5) * (Math.max(size.w, size.h) / 1000); // px per ms, scaled to the screen
+      const angle = rand(0.35, 0.6); // 20°–34° below horizontal
+      const speed = rand(0.8, 1.3) * (Math.max(size.w, size.h) / 1000); // px per ms, scaled to the screen
       meteors.push({
         x: rand(size.w * 0.15, size.w * 0.85),
-        y: rand(0, size.h * 0.45),
+        y: rand(0, size.h * 0.4),
         vx: Math.cos(angle) * speed * dir,
         vy: Math.sin(angle) * speed,
-        len: rand(110, 230),
+        len: Math.round(rand(14, 26)), // trail length in sky pixels
         life: 0,
-        ttl: rand(700, 1300),
+        ttl: rand(800, 1400),
       });
     }
 
@@ -228,23 +248,20 @@
           meteors.splice(i, 1);
           continue;
         }
-        const fade = p < 0.15 ? p / 0.15 : 1 - (p - 0.15) / 0.85; // quick fade-in, long fade-out
+        const fade = p < 0.12 ? p / 0.12 : 1 - (p - 0.12) / 0.88;
         const sp = Math.hypot(m.vx, m.vy) || 1;
-        const tx = m.x - (m.vx / sp) * m.len;
-        const ty = m.y - (m.vy / sp) * m.len;
-        const g = ctx.createLinearGradient(m.x, m.y, tx, ty);
-        g.addColorStop(0, `rgba(255,255,255,${(0.95 * fade).toFixed(3)})`);
-        g.addColorStop(0.3, `rgba(200,220,255,${(0.45 * fade).toFixed(3)})`);
-        g.addColorStop(1, "rgba(200,220,255,0)");
-        ctx.strokeStyle = g;
-        ctx.lineWidth = 1.6;
-        ctx.lineCap = "round";
-        ctx.beginPath();
-        ctx.moveTo(m.x, m.y);
-        ctx.lineTo(tx, ty);
-        ctx.stroke();
-        dot(m.x, m.y, 5, `rgba(210,225,255,${(0.22 * fade).toFixed(3)})`); // head glow
-        dot(m.x, m.y, 1.6, `rgba(255,255,255,${fade.toFixed(3)})`);
+        const ux = (m.vx / sp) * G;
+        const uy = (m.vy / sp) * G;
+        // trail: one square per sky pixel behind the head, fading in steps
+        for (let k = m.len; k >= 1; k -= 1) {
+          const a = step(fade * (1 - k / m.len));
+          if (a <= LEVELS[0] && k > m.len * 0.7) continue;
+          px(snap(m.x - ux * k), snap(m.y - uy * k), 1, `rgba(200,220,255,${(a * 0.9).toFixed(2)})`);
+        }
+        const hx = snap(m.x);
+        const hy = snap(m.y);
+        px(hx - G, hy - G, 1, `rgba(220,232,255,${step(fade * 0.5)})`); // small glow around the head
+        px(hx, hy, 2, `rgba(255,255,255,${step(fade)})`);
       }
     }
 
@@ -370,9 +387,9 @@
       input.style.setProperty("--p", `${((+input.value - min) / (max - min)) * 100}%`);
     };
 
-    // Playlist rows, Zing MP3 style: thumbnail (bars over it while playing), title, artist
+    // Playlist rows as an RPG menu: ▶ cursor on the current song, number, thumbnail, title, artist
     const thumb = (t) => {
-      const box = h("span", { class: "zm-thumb", "aria-hidden": "true" }, icon("fa-solid fa-music"));
+      const box = h("span", { class: "px-thumb", "aria-hidden": "true" }, pxIcon("music"));
       if (t.cover) {
         const img = h("img", { src: t.cover, alt: "", loading: "lazy" });
         img.addEventListener("error", () => img.remove(), { once: true });
@@ -387,10 +404,11 @@
         {},
         h(
           "button",
-          { class: "zm-row", type: "button", onclick: () => load(i, true) },
-          h("span", { class: "zm-row-num" }, String(i + 1)),
+          { class: "px-row", type: "button", onclick: () => load(i, true) },
+          h("span", { class: "px-cur" }, pxIcon("play")),
+          h("span", { class: "px-row-num" }, String(i + 1).padStart(2, "0")),
           thumb(t),
-          h("span", { class: "zm-text" }, h("span", { class: "zm-row-title" }, t.title), t.artist ? h("span", { class: "zm-row-artist" }, t.artist) : null)
+          h("span", { class: "px-text" }, h("span", { class: "px-row-title" }, t.title), t.artist ? h("span", { class: "px-row-artist" }, t.artist) : null)
         )
       )
     );
@@ -417,8 +435,7 @@
       el.title.textContent = t.title;
       el.artist.textContent = t.artist;
       el.artist.hidden = !t.artist;
-      // the cover also tints the whole panel (blurred), like Zing's player
-      root.style.setProperty("--zm-cover", t.cover ? `url("${encodeURI(t.cover).replace(/"/g, "%22")}")` : "none");
+      root.style.setProperty("--prog", "0");
 
       if (t.cover) {
         el.cover.onerror = () => {
@@ -483,7 +500,7 @@
     function syncPlayState() {
       const playing = !audio.paused;
       root.classList.toggle("is-playing", playing);
-      el.playIcon.className = playing ? "fa-solid fa-pause" : "fa-solid fa-play";
+      el.playIcon.className = playing ? "pixelart-icons-font-pause" : "pixelart-icons-font-play";
       el.play.setAttribute("aria-label", playing ? "Tạm dừng" : "Phát");
       el.state.textContent = playing ? "Đang phát" : "Tạm dừng";
       if ("mediaSession" in navigator) navigator.mediaSession.playbackState = playing ? "playing" : "paused";
@@ -491,7 +508,7 @@
 
     function syncVolume() {
       const v = audio.muted ? 0 : audio.volume;
-      el.volIcon.className = `fa-solid ${v === 0 ? "fa-volume-xmark" : v < 0.5 ? "fa-volume-low" : "fa-volume-high"}`;
+      el.volIcon.className = `pixelart-icons-font-${v === 0 ? "volume-x" : v < 0.5 ? "volume-1" : "volume-3"}`;
       const label = audio.muted ? "Bật tiếng" : "Tắt tiếng";
       el.mute.setAttribute("aria-label", label);
       el.mute.dataset.tip = label;
@@ -521,6 +538,8 @@
       el.seek.value = Math.round((audio.currentTime / audio.duration) * 1000);
       setRangeFill(el.seek);
       el.cur.textContent = fmtTime(audio.currentTime * 1000);
+      // tape moves from the left spool to the right one as the song plays
+      root.style.setProperty("--prog", (audio.currentTime / audio.duration).toFixed(3));
     });
     audio.addEventListener("error", () => {
       console.warn("[bio] Không phát được:", tracks[index].src);
@@ -716,7 +735,7 @@
     const parts = [];
     const hd = handle();
     if (hd) parts.push(h("span", {}, hd));
-    if (cfg.location) parts.push(h("span", {}, icon("fa-solid fa-location-dot"), cfg.location));
+    if (cfg.location) parts.push(h("span", {}, pxIcon("pin"), cfg.location));
     meta.replaceChildren(...parts);
   }
 
@@ -777,7 +796,7 @@
           { class: "link-btn", href: l.url, target: "_blank", rel: "noopener noreferrer" },
           icon(l.icon || "fa-solid fa-link"),
           h("span", {}, l.label),
-          icon("fa-solid fa-arrow-up-right-from-square arrow")
+          h("span", { class: "arrow" }, pxIcon("external-link"))
         )
       )
     );
@@ -861,188 +880,12 @@
     }, 260);
   }
 
-  /* ------------------------------------------------------------------ */
-  /* Deck: Music · Profile · Games panels. The front panel is usable;    */
-  /* the side panels are angled toward the viewer and inert until picked.*/
-  /* ------------------------------------------------------------------ */
-  const deck = (() => {
-    const deckEl = $("#deck");
-    const nav = $("#deck-nav");
-    const WALL = 60; // degrees between walls of a hexagonal room
-    let panels = [];
-    let angles = []; // each panel's angle around the room; grows without wrapping so turns stay continuous
-    let active = 0;
-    let tabs = [];
-
-    // offset -1 / 0 / +1 relative to the front panel, wrapping around for three panels
-    function offsetOf(i) {
-      const n = panels.length;
-      if (n < 2) return 0;
-      if (n === 2) return i === active ? 0 : i > active ? 1 : -1;
-      const d = (i - active + n) % n;
-      return d === 0 ? 0 : d === 1 ? 1 : -1;
-    }
-
-    // step: +1 = turn toward the right-hand wall, -1 = toward the left, 0 = initial placement.
-    // In CSS a positive rotateY swings a wall to the left, so the left wall sits at +60° and the
-    // right wall at -60°. Turning right raises every angle by 60°; with three panels, the wall
-    // leaving the left edge keeps turning the same way around the back of the room (240°) and
-    // comes back in on the right.
-    function layout(step) {
-      panels.forEach((p, i) => {
-        const off = offsetOf(i);
-        const target = -off * WALL;
-        if (!step || angles[i] == null) {
-          angles[i] = target;
-        } else {
-          let d = (((target - angles[i]) % 360) + 360) % 360; // 0..359 turning the + way
-          if (step < 0 && d) d -= 360; // turning left: go the - way instead
-          if (Math.abs(d) > WALL && !reduceMotion) {
-            // passing behind the camera: hide it while it is out of view
-            p.animate([{ opacity: 1 }, { opacity: 0, offset: 0.28 }, { opacity: 0, offset: 0.72 }, { opacity: 1 }], { duration: 900 });
-          }
-          angles[i] += d;
-        }
-        p.style.setProperty("--ang", `${angles[i]}deg`);
-        p.dataset.offset = String(off);
-        if (off !== 0) p.dataset.fade = off < 0 ? "left" : "right";
-        p.inert = off !== 0;
-        p.setAttribute("aria-hidden", off !== 0 ? "true" : "false");
-      });
-      tabs.forEach((t, i) => t.setAttribute("aria-current", String(i === active)));
-    }
-
-    function go(i, { focus = false } = {}) {
-      if (!panels.length) return;
-      const n = panels.length;
-      const next = ((i % n) + n) % n;
-      if (next === active) return;
-      const step = offsetOf(next); // the target is always one wall to the left (-1) or right (+1)
-      active = next;
-      layout(step);
-      if (focus) setTimeout(() => panels[active].querySelector(".panel-scroll")?.focus({ preventScroll: true }), 50);
-    }
-
-    // Which side wall lies under a point: left of the front panel = left wall, right of it =
-    // right wall. (The side walls' bounding boxes are huge because their outer edges reach
-    // almost to the camera, so they can't be hit-tested by rectangle.)
-    function sidePanelAt(x, y) {
-      const front = panels[active].getBoundingClientRect();
-      const deckBox = deckEl.getBoundingClientRect();
-      if (y < deckBox.top || y > deckBox.bottom) return -1;
-      const want = x < front.left ? -1 : x > front.right ? 1 : 0;
-      if (!want) return -1;
-      return panels.findIndex((_, i) => offsetOf(i) === want);
-    }
-
-    function init() {
-      panels = [...deckEl.querySelectorAll(".panel")].filter((p) => !p.hidden);
-      active = Math.max(0, panels.findIndex((p) => p.dataset.panel === "profile"));
-      panels.forEach((p) => p.querySelector(".panel-scroll")?.setAttribute("tabindex", "-1"));
-
-      tabs = panels.length > 1
-        ? panels.map((p, i) =>
-            h(
-              "button",
-              { class: "deck-tab", type: "button", onclick: () => go(i, { focus: true }) },
-              icon(p.dataset.icon || "fa-solid fa-circle"),
-              h("span", {}, p.dataset.label || "")
-            )
-          )
-        : [];
-      nav.replaceChildren(...tabs);
-      layout(0);
-
-      // once a wall has turned to the front, drop its fade mask (it is fully solid by then)
-      panels.forEach((p) =>
-        p.addEventListener("transitionend", (e) => {
-          if (e.target === p && e.propertyName === "transform" && p.dataset.offset === "0") delete p.dataset.fade;
-        })
-      );
-
-      // Side panels are inert, so clicks land on the deck itself: work out which one was hit.
-      deckEl.addEventListener("click", (e) => {
-        if (e.target.closest(".panel[data-offset='0']")) return;
-        const i = sidePanelAt(e.clientX, e.clientY);
-        if (i >= 0) go(i);
-      });
-      deckEl.addEventListener(
-        "pointermove",
-        (e) => {
-          const i = e.pointerType === "mouse" && !e.target.closest(".panel[data-offset='0']") ? sidePanelAt(e.clientX, e.clientY) : -1;
-          panels.forEach((p, k) => p.classList.toggle("is-hover", k === i));
-          deckEl.style.cursor = i >= 0 ? "pointer" : "";
-          // light spot on the front panel
-          const front = panels[active];
-          const r = front.getBoundingClientRect();
-          front.style.setProperty("--mx", `${((e.clientX - r.left) / r.width) * 100}%`);
-          front.style.setProperty("--my", `${((e.clientY - r.top) / r.height) * 100}%`);
-        },
-        { passive: true }
-      );
-      deckEl.addEventListener("pointerleave", () => {
-        panels.forEach((p) => p.classList.remove("is-hover"));
-        deckEl.style.cursor = "";
-      });
-
-      // Horizontal swipe on touch screens
-      let sx = 0;
-      let sy = 0;
-      let tracking = false;
-      deckEl.addEventListener("pointerdown", (e) => {
-        if (e.pointerType !== "touch" || e.target.closest("input")) return;
-        tracking = true;
-        sx = e.clientX;
-        sy = e.clientY;
-      });
-      deckEl.addEventListener("pointerup", (e) => {
-        if (!tracking) return;
-        tracking = false;
-        const dx = e.clientX - sx;
-        const dy = e.clientY - sy;
-        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) go(active + (dx < 0 ? 1 : -1));
-      });
-      deckEl.addEventListener("pointercancel", () => (tracking = false));
-
-      // ← → switch panels, except while typing or dragging a slider
-      document.addEventListener("keydown", (e) => {
-        if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-        if (e.altKey || e.ctrlKey || e.metaKey || document.documentElement.classList.contains("love-open")) return;
-        if (e.target.closest?.("input, textarea, select, [contenteditable], [role='tab']")) return;
-        go(active + (e.key === "ArrowRight" ? 1 : -1));
-      });
-    }
-
-    return { init, go };
-  })();
-
+  // Pixel arrow cursor (CSS, see .px-cursor in style.css), only with a mouse
   function setupCursor() {
-    if (!finePointer || fx.cursor === false || reduceMotion) return;
-    const c = $("#cursor");
-    let x = window.innerWidth / 2;
-    let y = window.innerHeight / 2;
-    let tx = x;
-    let ty = y;
-
-    window.addEventListener(
-      "pointermove",
-      (e) => {
-        tx = e.clientX;
-        ty = e.clientY;
-        c.classList.add("is-active");
-        c.classList.toggle("is-hover", !!e.target.closest("a, button, input, [data-tip]"));
-      },
-      { passive: true }
-    );
-    document.documentElement.addEventListener("mouseleave", () => c.classList.remove("is-active"));
-
-    (function loop() {
-      x += (tx - x) * 0.22;
-      y += (ty - y) * 0.22;
-      c.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-      requestAnimationFrame(loop);
-    })();
+    if (!finePointer || fx.cursor === false) return;
+    document.documentElement.classList.add("px-cursor");
   }
+
 
   /* ------------------------------------------------------------------ */
   /* Activity cards                                                      */
@@ -1250,7 +1093,7 @@
         p ? statusLine(p) : h("div", { class: "acard-sub" }, icon("fa-brands fa-discord"), LOVE_PAGE ? " Bấm để xem trang của cô ấy" : " Xem hồ sơ Discord"),
         p ? loverActivityLine(p) : null,
       ],
-      trailing: LOVE_PAGE ? h("span", { class: "lcard-go", "aria-hidden": "true" }, icon("fa-solid fa-chevron-right")) : null,
+      trailing: LOVE_PAGE ? h("span", { class: "lcard-go", "aria-hidden": "true" }, pxIcon("chevron-right")) : null,
     });
     // Remember where the click happened so the pink page can grow out of that point.
     if (LOVE_PAGE) card.addEventListener("click", (e) => love.setOrigin(e.clientX, e.clientY));
@@ -1754,6 +1597,8 @@
     const FETCHED = new Set(["genshin", "hsr"]);
     const DISCORD_NAMES = { wuwa: ["Wuthering Waves"], genshin: ["Genshin Impact"], hsr: ["Honkai: Star Rail", "Honkai Star Rail"] };
     const LEVEL_LABEL = { wuwa: "Union Level", genshin: "Cấp Mạo Hiểm", hsr: "Cấp Khai Phá" };
+    const LEVEL_SHORT = { wuwa: "UL", genshin: "AR", hsr: "TL" };
+    const LEVEL_MAX = { genshin: 60, hsr: 70 }; // WuWa: set games.list[].maxLevel in config.js to show the bar
     let data = {};
     let current = 0;
     let token = 0;
@@ -1764,30 +1609,50 @@
 
     const fmtNum = (n) => (typeof n === "number" ? n.toLocaleString("vi-VN") : String(n));
     const filled = (v) => v != null && v !== "";
+    // some in-game names are only invisible characters (variation selectors, zero-width spaces)
+    const visible = (s) => (/[^\s\uFE00-\uFE0F\u200B-\u200D\u2060\uFEFF]/.test(String(s || "")) ? String(s).trim() : "");
     const uidOf = (g) => String(g.uid || "").trim();
 
     function statsFor(g, d) {
       const out = [];
       const add = (label, value) => filled(value) && out.push({ label, value: fmtNum(value) });
       if (g.id === "genshin" && d) {
-        add("Cấp Mạo Hiểm", d.level);
         add("Cấp Thế Giới", d.worldLevel);
         add("Thành tựu", d.achievements);
         add("La Hoàn Thâm Cảnh", d.abyss);
         add("Kịch Trường Ảo Tưởng", d.theater);
         add("Thân thiết tối đa", d.friendship ? `${d.friendship} nhân vật` : "");
       } else if (g.id === "hsr" && d) {
-        add("Cấp Khai Phá", d.level);
         add("Cấp Cân Bằng", d.worldLevel);
         add("Thành tựu", d.achievements);
         add("Nhân vật", d.characterCount);
         add("Nón Ánh Sáng", d.lightCones);
         add("Vũ Trụ Mô Phỏng", d.universe ? `Thế giới ${d.universe}` : "");
-      } else {
+      } else if (!levelInfo(g, d)) {
         add(LEVEL_LABEL[g.id] || "Cấp", g.level);
       }
       (Array.isArray(g.stats) ? g.stats : []).forEach((s) => s && s.label && add(s.label, s.value));
       return out;
+    }
+
+    // { level, max } when the level can be drawn as an EXP bar
+    function levelInfo(g, d) {
+      const level = Number(d?.level ?? g.level);
+      const max = Number(g.maxLevel || LEVEL_MAX[g.id]);
+      return level > 0 && max > 0 ? { level, max } : null;
+    }
+
+    function levelBar(g, d) {
+      const lv = levelInfo(g, d);
+      if (!lv) return null;
+      const pct = clamp((lv.level / lv.max) * 100, 0, 100);
+      return h(
+        "div",
+        { class: "gm-level", role: "img", "aria-label": `${LEVEL_LABEL[g.id] || "Cấp"} ${lv.level}/${lv.max}` },
+        h("span", { class: "gm-lv" }, LEVEL_SHORT[g.id] || "LV", h("b", {}, String(lv.level))),
+        h("span", { class: "gm-bar", style: `--fill:${pct}%` }),
+        h("span", { class: "gm-max" }, lv.level >= lv.max ? "MAX" : `/${lv.max}`)
+      );
     }
 
     function charGrid(chars) {
@@ -1801,10 +1666,10 @@
           const box = h("div", { class: "gm-char-img" });
           if (c.icon) {
             const img = h("img", { src: c.icon, alt: "", loading: "lazy" });
-            img.addEventListener("error", () => img.replaceWith(icon("fa-solid fa-user")), { once: true });
+            img.addEventListener("error", () => img.replaceWith(pxIcon("user")), { once: true });
             box.append(img);
           } else {
-            box.append(icon("fa-solid fa-user"));
+            box.append(pxIcon("user"));
           }
           if (c.level) box.append(h("span", { class: "gm-char-lv" }, `Lv.${c.level}${c.eidolon ? ` · E${c.eidolon}` : ""}`));
           return h("figure", { class: "gm-char", "data-rarity": c.rarity || 4 }, box, h("figcaption", {}, c.name || ""));
@@ -1822,7 +1687,7 @@
     function buildPanel(g, i) {
       const d = data[g.id] && data[g.id].uid === uidOf(g) ? data[g.id] : null;
       const uid = uidOf(g);
-      const nickname = d?.nickname || g.nickname || "";
+      const nickname = visible(g.nickname) || visible(d?.nickname); // config.js wins, so a name can be set by hand
       const stats = statsFor(g, d);
       const chars = d?.characters?.length ? d.characters : (Array.isArray(g.characters) ? g.characters : []).filter(Boolean).map((name) => ({ name }));
 
@@ -1830,9 +1695,9 @@
       liveSlots[i] = live;
       const meta = [];
       if (uid) {
-        meta.push(h("button", { class: "gm-chip", type: "button", "aria-label": `Sao chép UID ${uid}`, onclick: () => copyText(uid) }, icon("fa-regular fa-copy"), `UID ${uid}`));
+        meta.push(h("button", { class: "gm-chip", type: "button", "aria-label": `Sao chép UID ${uid}`, "data-tip": "Bấm để sao chép", onclick: () => copyText(uid) }, pxIcon("copy"), `UID ${uid}`));
       }
-      if (g.server) meta.push(h("span", { class: "gm-chip" }, icon("fa-solid fa-earth-asia"), g.server));
+      if (g.server) meta.push(h("span", { class: "gm-chip" }, pxIcon("map"), g.server));
       meta.push(live);
 
       return h(
@@ -1846,8 +1711,15 @@
           d?.signature ? h("div", { class: "gm-sign" }, `“${d.signature}”`) : null,
           h("div", { class: "gm-meta" }, meta)
         ),
+        levelBar(g, d),
         stats.length
-          ? h("div", { class: "gm-stats" }, stats.map((s) => h("div", { class: "gm-stat" }, h("div", { class: "gm-stat-value" }, s.value), h("div", { class: "gm-stat-label" }, s.label))))
+          ? h(
+              "dl",
+              { class: "gm-stats" },
+              stats.map((s) =>
+                h("div", { class: "gm-stat" }, h("dt", { class: "gm-stat-label" }, h("span", {}, s.label)), h("dd", { class: "gm-stat-value" }, s.value))
+              )
+            )
           : null,
         chars.length ? h("h4", { class: "gm-sub" }, d?.characters?.length ? "Nhân vật trưng bày" : "Nhân vật") : null,
         chars.length ? charGrid(chars) : null,
@@ -1883,14 +1755,14 @@
         inn.hidden = false;
         return;
       }
-      // flip the old card away and the new one in, in the direction of travel
-      const away = `translateX(${-dir * 46}px) rotateY(${dir * 28}deg) scale(0.95)`;
-      const enter = `translateX(${dir * 46}px) rotateY(${-dir * 28}deg) scale(0.95)`;
-      out.animate([{ opacity: 1, transform: "none" }, { opacity: 0, transform: away }], { duration: 200, easing: "ease-in" }).onfinish = () => {
+      // 8-bit screen change: the old screen blinks out, the new one wipes in, in steps,
+      // from the side of the tab you picked
+      const from0 = dir > 0 ? "inset(0 100% 0 0)" : "inset(0 0 0 100%)";
+      out.animate([{ opacity: 1 }, { opacity: 0.4 }, { opacity: 1 }, { opacity: 0 }], { duration: 160, easing: "steps(1, end)" }).onfinish = () => {
         if (my !== token) return;
         out.hidden = true;
         inn.hidden = false;
-        inn.animate([{ opacity: 0, transform: enter }, { opacity: 1, transform: "none" }], { duration: 380, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" });
+        inn.animate([{ clipPath: from0 }, { clipPath: "inset(0 0 0 0)" }], { duration: 320, easing: "steps(8, end)" });
       };
     }
 
@@ -1934,7 +1806,7 @@
         if (liveDots[i]) liveDots[i].hidden = !a;
         liveSlots[i]?.replaceChildren(
           ...(a
-            ? [h("span", { class: "gm-chip is-live" }, icon("fa-solid fa-circle"), "Đang chơi", a.timestamps?.start ? h("span", { "data-since": a.timestamps.start }, "") : null)]
+            ? [h("span", { class: "gm-chip is-live" }, h("span", { class: "live-sq", "aria-hidden": "true" }), "Đang chơi", a.timestamps?.start ? h("span", { "data-since": a.timestamps.start }, "") : null)]
             : [])
         );
       });
@@ -2222,7 +2094,6 @@
   renderLover();
   love.init();
   games.init();
-  deck.init();
   setupCursor();
   startTitle();
   setupEnter();

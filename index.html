@@ -10,136 +10,126 @@
   <meta property="og:url" content="https://nguyenanhquan.tech/" />
   <meta property="og:description" content="Trang cá nhân của tôi: mạng xã hội, nhạc và hoạt động trực tiếp." />
   <meta property="og:type" content="profile" />
-  <meta name="theme-color" content="#0b0b12" />
+  <meta name="theme-color" content="#0b0920" />
   <link rel="icon" id="favicon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Quicksand:wght@400;500;600;700&family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet" />
+  <!-- VT323 + Tiny5: phông pixel có đủ dấu tiếng Việt. Quicksand + Dancing Script: trang người yêu -->
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Tiny5&family=Quicksand:wght@400;500;600;700&family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet" />
+  <!-- Icon pixel (pixelarticons, MIT) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pixelarticons@1.8.2/fonts/pixelart-icons-font.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" referrerpolicy="no-referrer" />
   <!-- Tăng số ?v= mỗi khi sửa CSS/JS để người xem nhận bản mới ngay, không phải đợi cache 10 phút -->
-  <link rel="stylesheet" href="assets/css/style.css?v=9" />
+  <link rel="stylesheet" href="assets/css/style.css?v=10" />
 </head>
 <body>
-  <!-- Nền: bầu trời đêm + dải ngân hà (hoặc video / ảnh) + canvas sao & sao băng -->
+  <!-- Nền: bầu trời đêm kiểu pixel (dải màu, trăng, đồi) + canvas sao & sao băng; hoặc video / ảnh -->
   <div class="bg" aria-hidden="true">
     <div class="bg-sky"></div>
-    <div class="bg-milkyway"></div>
     <img class="bg-media" id="bg-image" alt="" hidden />
     <video class="bg-media" id="bg-video" muted loop playsinline preload="auto" hidden></video>
     <div class="bg-overlay"></div>
     <canvas id="particles"></canvas>
+    <svg class="bg-moon" viewBox="0 0 20 20" shape-rendering="crispEdges"><rect x="9" y="1" width="1" height="1" fill="#f2c96b"/><rect x="6" y="2" width="3" height="1" fill="#f2c96b"/><rect x="4" y="3" width="2" height="1" fill="#f2c96b"/><rect x="7" y="3" width="1" height="1" fill="#f2c96b"/><rect x="3" y="4" width="2" height="1" fill="#f2c96b"/><rect x="3" y="5" width="1" height="1" fill="#f2c96b"/><rect x="6" y="5" width="1" height="1" fill="#f2c96b"/><rect x="2" y="6" width="1" height="1" fill="#f2c96b"/><rect x="6" y="6" width="1" height="1" fill="#f2c96b"/><rect x="2" y="7" width="1" height="1" fill="#f2c96b"/><rect x="6" y="7" width="1" height="1" fill="#f2c96b"/><rect x="2" y="8" width="1" height="1" fill="#f2c96b"/><rect x="6" y="8" width="1" height="1" fill="#f2c96b"/><rect x="1" y="9" width="2" height="1" fill="#f2c96b"/><rect x="1" y="10" width="2" height="1" fill="#f2c96b"/><rect x="2" y="11" width="1" height="1" fill="#f2c96b"/><rect x="2" y="12" width="1" height="1" fill="#f2c96b"/><rect x="8" y="12" width="1" height="1" fill="#f2c96b"/><rect x="2" y="13" width="1" height="1" fill="#f2c96b"/><rect x="9" y="13" width="1" height="1" fill="#f2c96b"/><rect x="3" y="14" width="1" height="1" fill="#f2c96b"/><rect x="11" y="14" width="1" height="1" fill="#f2c96b"/><rect x="16" y="14" width="1" height="1" fill="#f2c96b"/><rect x="3" y="15" width="2" height="1" fill="#f2c96b"/><rect x="15" y="15" width="2" height="1" fill="#f2c96b"/><rect x="4" y="16" width="2" height="1" fill="#f2c96b"/><rect x="14" y="16" width="2" height="1" fill="#f2c96b"/><rect x="6" y="17" width="8" height="1" fill="#f2c96b"/><rect x="9" y="18" width="2" height="1" fill="#f2c96b"/><rect x="6" y="3" width="1" height="1" fill="#fff1b8"/><rect x="5" y="4" width="2" height="1" fill="#fff1b8"/><rect x="4" y="5" width="2" height="1" fill="#fff1b8"/><rect x="3" y="6" width="3" height="1" fill="#fff1b8"/><rect x="3" y="7" width="3" height="1" fill="#fff1b8"/><rect x="3" y="8" width="3" height="1" fill="#fff1b8"/><rect x="3" y="9" width="4" height="1" fill="#fff1b8"/><rect x="3" y="10" width="1" height="1" fill="#fff1b8"/><rect x="6" y="10" width="1" height="1" fill="#fff1b8"/><rect x="3" y="11" width="1" height="1" fill="#fff1b8"/><rect x="5" y="11" width="3" height="1" fill="#fff1b8"/><rect x="3" y="12" width="5" height="1" fill="#fff1b8"/><rect x="3" y="13" width="6" height="1" fill="#fff1b8"/><rect x="4" y="14" width="2" height="1" fill="#fff1b8"/><rect x="8" y="14" width="3" height="1" fill="#fff1b8"/><rect x="5" y="15" width="10" height="1" fill="#fff1b8"/><rect x="6" y="16" width="8" height="1" fill="#fff1b8"/><rect x="4" y="10" width="2" height="1" fill="#e7b95a"/><rect x="4" y="11" width="1" height="1" fill="#e7b95a"/><rect x="6" y="14" width="2" height="1" fill="#e7b95a"/></svg>
+    <svg class="bg-hills" viewBox="0 0 320 56" preserveAspectRatio="xMidYMax slice" shape-rendering="crispEdges"><path d="M0 56V22H8V24H16V26H24V24H32V28H40V28H48V24H56V24H64V28H72V30H80V34H88V40H96V40H104V36H112V34H120V32H128V28H136V32H144V32H152V28H160V26H168V24H176V20H184V20H192V26H200V28H208V32H216V36H224V34H232V32H240V34H248V36H256V34H264V38H272V38H280V30H288V26H296V24H304V20H312V22H320V28H328V56Z" fill="#1c1550"/><path d="M0 56V46H6V46H12V44H18V44H24V46H30V48H36V48H42V46H48V44H54V44H60V40H66V36H72V34H78V36H84V38H90V38H96V38H102V40H108V42H114V40H120V38H126V40H132V42H138V44H144V44H150V46H156V50H162V50H168V48H174V46H180V44H186V44H192V40H198V38H204V40H210V42H216V42H222V40H228V38H234V38H240V38H246V34H252V34H258V38H264V42H270V44H276V44H282V46H288V48H294V48H300V44H306V44H312V46H318V46H324V56Z" fill="#0e0b2c"/></svg>
   </div>
+
+  <!-- Hình pixel dùng chung: cuộn băng cassette -->
+  <svg class="px-sprites" aria-hidden="true" focusable="false"><symbol id="px-reel" viewBox="0 0 12 12"><rect x="5" y="0" width="2" height="1" fill="#ece8ff"/><rect x="3" y="1" width="6" height="1" fill="#ece8ff"/><rect x="2" y="2" width="1" height="1" fill="#ece8ff"/><rect x="6" y="2" width="4" height="1" fill="#ece8ff"/><rect x="1" y="3" width="2" height="1" fill="#ece8ff"/><rect x="6" y="3" width="5" height="1" fill="#ece8ff"/><rect x="1" y="4" width="4" height="1" fill="#ece8ff"/><rect x="7" y="4" width="4" height="1" fill="#ece8ff"/><rect x="0" y="5" width="4" height="1" fill="#ece8ff"/><rect x="10" y="5" width="2" height="1" fill="#ece8ff"/><rect x="0" y="6" width="4" height="1" fill="#ece8ff"/><rect x="10" y="6" width="2" height="1" fill="#ece8ff"/><rect x="1" y="7" width="4" height="1" fill="#ece8ff"/><rect x="7" y="7" width="4" height="1" fill="#ece8ff"/><rect x="1" y="8" width="2" height="1" fill="#ece8ff"/><rect x="6" y="8" width="5" height="1" fill="#ece8ff"/><rect x="2" y="9" width="1" height="1" fill="#ece8ff"/><rect x="6" y="9" width="4" height="1" fill="#ece8ff"/><rect x="3" y="10" width="6" height="1" fill="#ece8ff"/><rect x="5" y="11" width="2" height="1" fill="#ece8ff"/><rect x="3" y="2" width="3" height="1" fill="#2b2366"/><rect x="3" y="3" width="3" height="1" fill="#2b2366"/><rect x="8" y="5" width="2" height="1" fill="#2b2366"/><rect x="8" y="6" width="2" height="1" fill="#2b2366"/><rect x="3" y="8" width="3" height="1" fill="#2b2366"/><rect x="3" y="9" width="3" height="1" fill="#2b2366"/><rect x="5" y="4" width="2" height="1" fill="#120f33"/><rect x="4" y="5" width="4" height="1" fill="#120f33"/><rect x="4" y="6" width="4" height="1" fill="#120f33"/><rect x="5" y="7" width="2" height="1" fill="#120f33"/></symbol></svg>
 
   <!-- Màn hình "nhấn để vào" (cần để trình duyệt cho phép phát nhạc) -->
   <button class="enter" id="enter" type="button" hidden>
-    <span class="enter-text" id="enter-text">nhấn để vào</span>
+    <span class="enter-logo">nguyenanhquan.tech</span>
+    <span class="enter-cta"><i class="pixelart-icons-font-play" aria-hidden="true"></i><span id="enter-text">nhấn để vào</span></span>
   </button>
 
   <main class="stage" id="stage">
-    <!-- 3 thẻ: Nhạc (trái) · Hồ sơ (giữa) · Game (phải).
-         Bấm thẻ bên cạnh, bấm nút phía trên, vuốt ngang (điện thoại) hoặc phím ← → để chuyển. -->
-    <nav class="deck-nav" id="deck-nav" aria-label="Chọn thẻ"></nav>
-
-    <div class="deck" id="deck">
-      <!-- Thẻ nhạc kiểu Zing MP3. Danh sách bài nằm trong assets/js/config.js (music.tracks) -->
-      <article class="panel panel-music" id="music" data-panel="music" data-label="Nhạc" data-icon="fa-solid fa-music" aria-label="Âm nhạc" hidden>
-        <div class="zm-bg" aria-hidden="true"></div>
-        <div class="panel-scroll">
-          <header class="zm-head">
-            <span class="zm-from">Đang phát từ</span>
-            <span class="zm-playlist" id="music-playlist"></span>
-          </header>
-
-          <div class="zm-art" aria-hidden="true">
-            <div class="zm-disc">
-              <img id="disc-cover" alt="" hidden />
-              <i class="fa-solid fa-music" id="disc-icon"></i>
-            </div>
+    <div class="px-col">
+      <!-- Hồ sơ -->
+      <section class="win win-profile" aria-labelledby="t-profile">
+        <h2 class="win-title" id="t-profile"><i class="pixelart-icons-font-user" aria-hidden="true"></i> Người chơi 1</h2>
+        <header class="profile">
+          <div class="avatar-wrap">
+            <span class="avatar-ring" aria-hidden="true"></span>
+            <img class="avatar" id="avatar" alt="Ảnh đại diện" />
+            <img class="avatar-deco" id="avatar-deco" alt="" hidden />
+            <span class="status-dot" id="status-dot" hidden></span>
           </div>
-
-          <div class="zm-info">
-            <div class="zm-title" id="music-title"></div>
-            <div class="zm-artist" id="music-artist"></div>
-            <span class="sr-only" id="music-state" aria-live="polite"></span>
-          </div>
-
-          <input class="range seek" id="seek" type="range" min="0" max="1000" step="1" value="0" aria-label="Tua bài hát" />
-          <div class="times"><span id="t-cur">0:00</span><span id="t-dur">0:00</span></div>
-
-          <div class="zm-controls">
-            <button class="zbtn" id="btn-shuffle" type="button" aria-label="Trộn bài" data-tip="Trộn bài" aria-pressed="false">
-              <i class="fa-solid fa-shuffle" aria-hidden="true"></i>
-            </button>
-            <button class="zbtn" id="btn-prev" type="button" aria-label="Bài trước" data-tip="Bài trước">
-              <i class="fa-solid fa-backward-step" aria-hidden="true"></i>
-            </button>
-            <button class="zbtn zbtn-play" id="btn-play" type="button" aria-label="Phát">
-              <i class="fa-solid fa-play" id="play-icon" aria-hidden="true"></i>
-            </button>
-            <button class="zbtn" id="btn-next" type="button" aria-label="Bài tiếp" data-tip="Bài tiếp">
-              <i class="fa-solid fa-forward-step" aria-hidden="true"></i>
-            </button>
-            <button class="zbtn" id="btn-repeat" type="button" aria-label="Lặp lại">
-              <i class="fa-solid fa-repeat" aria-hidden="true"></i><span class="repeat-one" aria-hidden="true">1</span>
-            </button>
-          </div>
-
-          <div class="zm-vol">
-            <button class="zbtn zbtn-sm" id="btn-mute" type="button" aria-label="Tắt tiếng" data-tip="Tắt tiếng">
-              <i class="fa-solid fa-volume-high" id="vol-icon" aria-hidden="true"></i>
-            </button>
-            <input class="range vol-range" id="vol" type="range" min="0" max="1" step="0.01" aria-label="Âm lượng" />
-          </div>
-
-          <div class="zm-list-head">
-            <span>Danh sách phát</span>
-            <span class="zm-count" id="music-count"></span>
-          </div>
-          <ol class="zm-list" id="playlist"></ol>
-        </div>
-        <audio id="audio" preload="metadata"></audio>
-      </article>
-
-      <!-- Thẻ hồ sơ (giữa) -->
-      <article class="panel panel-profile" id="card" data-panel="profile" data-label="Hồ sơ" data-icon="fa-solid fa-user" aria-label="Hồ sơ">
-        <div class="panel-scroll">
-          <header class="profile">
-            <div class="avatar-wrap">
-              <img class="avatar" id="avatar" alt="Ảnh đại diện" />
-              <img class="avatar-deco" id="avatar-deco" alt="" hidden />
-              <span class="status-dot" id="status-dot" hidden></span>
-            </div>
-
+          <div class="profile-info">
             <h1 class="name" id="name"></h1>
-            <div class="badges" id="badges"></div>
             <p class="meta" id="meta"></p>
-            <p class="bio"><span id="bio-text"></span><span class="caret" aria-hidden="true">|</span></p>
-          </header>
+            <div class="badges" id="badges"></div>
+          </div>
+        </header>
+        <p class="bio"><span id="bio-text"></span><span class="caret" aria-hidden="true"></span></p>
+        <nav class="socials" id="socials" aria-label="Mạng xã hội"></nav>
+        <section class="links" id="links" aria-label="Liên kết"></section>
+      </section>
 
-          <nav class="socials" id="socials" aria-label="Mạng xã hội"></nav>
+      <!-- Người yêu (bấm để mở trang riêng của cô ấy) -->
+      <section class="lover" id="lover" aria-label="Người yêu"></section>
 
-          <section class="lover" id="lover" aria-label="Người yêu"></section>
-
-          <section class="activity" id="activity" aria-label="Hoạt động"></section>
-
-          <section class="links" id="links" aria-label="Liên kết"></section>
+      <!-- Máy nghe nhạc cassette. Danh sách bài nằm trong assets/js/config.js (music.tracks) -->
+      <section class="win win-music" id="music" aria-labelledby="t-music" hidden>
+        <h2 class="win-title" id="t-music"><i class="pixelart-icons-font-music" aria-hidden="true"></i> Máy nghe nhạc</h2>
+        <div class="cassette">
+          <div class="cs-label">
+            <span class="cs-side" aria-hidden="true">A</span>
+            <div class="cs-text">
+              <div class="cs-title" id="music-title"></div>
+              <div class="cs-artist" id="music-artist"></div>
+            </div>
+            <span class="cs-cover" aria-hidden="true">
+              <img id="disc-cover" alt="" hidden />
+              <i class="pixelart-icons-font-music" id="disc-icon"></i>
+            </span>
+          </div>
+          <div class="cs-window" aria-hidden="true">
+            <span class="cs-spool cs-left"><span class="cs-tape"></span><svg class="cs-reel" viewBox="0 0 12 12"><use href="#px-reel" /></svg></span>
+            <span class="cs-strip"></span>
+            <span class="cs-spool cs-right"><span class="cs-tape"></span><svg class="cs-reel" viewBox="0 0 12 12"><use href="#px-reel" /></svg></span>
+          </div>
+          <div class="cs-foot" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
         </div>
-      </article>
+        <p class="cs-from">Đang phát từ <span id="music-playlist"></span></p>
+        <span class="sr-only" id="music-state" aria-live="polite"></span>
 
-      <!-- Thẻ game: WuWa · Genshin · HSR (cấu hình trong assets/js/config.js → games) -->
-      <article class="panel panel-games" id="games" data-panel="games" data-label="Game" data-icon="fa-solid fa-gamepad" aria-label="Game" hidden>
-        <div class="panel-scroll">
-          <header class="gm-head">
-            <span class="gm-kicker"><i class="fa-solid fa-gamepad" aria-hidden="true"></i> <span id="gm-title"></span></span>
-            <div class="gm-tabs" id="gm-tabs" role="tablist" aria-label="Chọn game"></div>
-          </header>
-          <div class="gm-stage" id="gm-stage"></div>
+        <input class="px-range seek" id="seek" type="range" min="0" max="1000" step="1" value="0" aria-label="Tua bài hát" />
+        <div class="px-times"><span id="t-cur">0:00</span><span id="t-dur">0:00</span></div>
+
+        <div class="px-controls">
+          <button class="pbtn" id="btn-shuffle" type="button" aria-label="Trộn bài" data-tip="Trộn bài" aria-pressed="false"><i class="pixelart-icons-font-shuffle" aria-hidden="true"></i></button>
+          <button class="pbtn" id="btn-prev" type="button" aria-label="Bài trước" data-tip="Bài trước"><i class="pixelart-icons-font-prev" aria-hidden="true"></i></button>
+          <button class="pbtn pbtn-play" id="btn-play" type="button" aria-label="Phát"><i class="pixelart-icons-font-play" id="play-icon" aria-hidden="true"></i></button>
+          <button class="pbtn" id="btn-next" type="button" aria-label="Bài tiếp" data-tip="Bài tiếp"><i class="pixelart-icons-font-next" aria-hidden="true"></i></button>
+          <button class="pbtn" id="btn-repeat" type="button" aria-label="Lặp lại"><i class="pixelart-icons-font-repeat" aria-hidden="true"></i><span class="repeat-one" aria-hidden="true">1</span></button>
         </div>
-      </article>
+        <div class="px-vol">
+          <button class="pbtn pbtn-sm" id="btn-mute" type="button" aria-label="Tắt tiếng" data-tip="Tắt tiếng"><i class="pixelart-icons-font-volume-3" id="vol-icon" aria-hidden="true"></i></button>
+          <input class="px-range vol-range" id="vol" type="range" min="0" max="1" step="0.01" aria-label="Âm lượng" />
+        </div>
+
+        <div class="px-list-head"><span>Danh sách phát</span><span id="music-count"></span></div>
+        <ol class="px-list" id="playlist"></ol>
+        <audio id="audio" preload="metadata"></audio>
+      </section>
+
+      <!-- Game: WuWa · Genshin · HSR (cấu hình trong assets/js/config.js → games) -->
+      <section class="win win-games" id="games" aria-labelledby="gm-title" hidden>
+        <h2 class="win-title"><i class="pixelart-icons-font-gamepad" aria-hidden="true"></i> <span id="gm-title"></span></h2>
+        <div class="gm-tabs" id="gm-tabs" role="tablist" aria-label="Chọn game"></div>
+        <div class="gm-stage" id="gm-stage"></div>
+      </section>
+
+      <!-- Đang làm gì: Discord, game đang mở, Spotify, GitHub (tự ẩn khi trống) -->
+      <section class="win win-activity" aria-labelledby="t-activity">
+        <h2 class="win-title" id="t-activity"><i class="pixelart-icons-font-zap" aria-hidden="true"></i> Đang làm gì</h2>
+        <div class="activity" id="activity"></div>
+      </section>
+
+      <footer class="footer" id="footer"></footer>
     </div>
-
-    <footer class="footer" id="footer"></footer>
   </main>
 
   <!-- Trang riêng của người yêu (mở khi bấm thẻ "Người yêu tôi", hoặc vào thẳng /#love) -->
@@ -214,9 +204,8 @@
   </section>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <div class="cursor" id="cursor" aria-hidden="true"></div>
 
-  <script src="assets/js/config.js?v=9"></script>
-  <script src="assets/js/main.js?v=9"></script>
+  <script src="assets/js/config.js?v=10"></script>
+  <script src="assets/js/main.js?v=10"></script>
 </body>
 </html>
