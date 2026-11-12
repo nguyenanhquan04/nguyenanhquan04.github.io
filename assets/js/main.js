@@ -740,31 +740,38 @@
     meta.replaceChildren(...parts);
   }
 
-  // Player 1 status: a coloured square + online/idle/dnd/offline, then the Discord custom status
+  // Player 1 status: a coloured square + online/idle/dnd/offline under the name, and the
+  // Discord custom status as a thought bubble rising from the avatar
   let presenceSig = null;
   function renderPresence() {
     const box = $("#presence");
+    const thought = $("#thought");
     const p = integ.showDiscord !== false ? state.discord : null;
     const custom = p?.activities?.find((a) => a.type === 4);
     const sig = JSON.stringify([p?.discord_status, custom?.state, custom?.emoji]);
     if (sig === presenceSig) return;
     presenceSig = sig;
+
+    const hasThought = !!(custom && (custom.state || custom.emoji));
     box.hidden = !p;
+    thought.hidden = !hasThought;
+    $(".profile").classList.toggle("has-thought", hasThought);
     if (!p) return;
+
     const status = p.discord_status || "offline";
-    const nodes = [h("span", { class: "pr-status" }, h("span", { class: "mini-dot", "data-status": status }), STATUS_TEXT[status] || STATUS_TEXT.offline)];
-    if (custom && (custom.state || custom.emoji)) {
-      const say = h("span", { class: "pr-say" });
+    box.replaceChildren(h("span", { class: "pr-status" }, h("span", { class: "mini-dot", "data-status": status }), STATUS_TEXT[status] || STATUS_TEXT.offline));
+
+    if (hasThought) {
+      const nodes = [];
       const e = custom.emoji;
       if (e?.id) {
-        say.append(h("img", { class: "emoji", alt: e.name || "", src: `https://cdn.discordapp.com/emojis/${e.id}.${e.animated ? "gif" : "png"}?size=32` }));
+        nodes.push(h("img", { class: "emoji", alt: e.name || "", src: `https://cdn.discordapp.com/emojis/${e.id}.${e.animated ? "gif" : "png"}?size=48` }));
       } else if (e?.name) {
-        say.append(`${e.name} `);
+        nodes.push(`${e.name} `);
       }
-      if (custom.state) say.append(custom.state);
-      nodes.push(say);
+      if (custom.state) nodes.push(custom.state);
+      $("#thought-text").replaceChildren(...nodes);
     }
-    box.replaceChildren(...nodes);
   }
 
   const SOCIAL = {

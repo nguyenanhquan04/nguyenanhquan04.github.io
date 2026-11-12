@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pixelarticons@1.8.2/fonts/pixelart-icons-font.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" referrerpolicy="no-referrer" />
   <!-- Tăng số ?v= mỗi khi sửa CSS/JS để người xem nhận bản mới ngay, không phải đợi cache 10 phút -->
-  <link rel="stylesheet" href="assets/css/style.css?v=11" />
+  <link rel="stylesheet" href="assets/css/style.css?v=12" />
 </head>
 <body>
   <!-- Nền: bầu trời đêm kiểu pixel (dải màu, trăng, đồi) + canvas sao & sao băng; hoặc video / ảnh -->
@@ -56,6 +56,8 @@
             <img class="avatar-deco" id="avatar-deco" alt="" hidden />
             <span class="status-dot" id="status-dot" hidden></span>
           </div>
+          <!-- Custom status Discord, vẽ như bong bóng suy nghĩ bay lên từ avatar -->
+          <p class="thought" id="thought" hidden><span class="sr-only">Đang nghĩ: </span><span id="thought-text"></span></p>
           <div class="profile-info">
             <h1 class="name" id="name"></h1>
             <p class="meta" id="meta"></p>
@@ -206,7 +208,7 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="assets/js/config.js?v=11"></script>
-  <script src="assets/js/main.js?v=11"></script>
+  <script src="assets/js/config.js?v=12"></script>
+  <script src="assets/js/main.js?v=12"></script>
 </body>
 </html>

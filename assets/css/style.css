@@ -80,7 +80,7 @@ img { display: block; }
    A border made of box-shadows: corners are left out, which gives the stepped "pixel" corner.
    --bd border · --ol outline · --sh hard shadow under the frame · --lt/--dk inner bevel */
 .win, .win-title, .bio, .social, .badge, .link-btn, .lcard, .cassette, .pbtn, .px-list,
-.gm-tab, .gm-banner, .gm-stats, .gm-chip, .gm-char-img, .toast, .notice, .qn-btn, .pr-say {
+.gm-tab, .gm-banner, .gm-stats, .gm-chip, .gm-char-img, .toast, .notice, .qn-btn, .thought {
   --u: var(--px);
   --bd: var(--hi);
   --ol: var(--ink);
@@ -289,10 +289,67 @@ img { display: block; }
 
 
 /* ---------- Profile ---------- */
+/* avatar on the left, name/info on the right; with a custom status the thought bubble
+   takes a row above the name */
 .profile {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas: "avatar info";
   align-items: center;
-  gap: 24px;
+  column-gap: 24px;
+}
+
+.profile.has-thought { grid-template-areas: "avatar thought" "avatar info"; }
+.profile.has-thought .profile-info { align-self: start; }
+.profile .avatar-wrap { grid-area: avatar; }
+.profile-info { grid-area: info; }
+
+/* ---------- Thought bubble (Discord custom status) ----------
+   A cream pixel cloud with two small "thinking" dots trailing toward the avatar. */
+.thought {
+  --u: 3px;
+  --bd: #f6f1e4;
+  --ol: var(--ink);
+  --sh: rgba(3, 2, 14, 0.45);
+  --lt: transparent;
+  --dk: rgba(60, 40, 90, 0.1);
+  grid-area: thought;
+  position: relative;
+  justify-self: start;
+  align-self: end;
+  max-width: calc(100% - 18px);
+  margin: 6px 0 32px 18px; /* room below for the dots, clear of the name */
+  padding: 4px 12px;
+  background: #f6f1e4;
+  color: var(--ink);
+  font-size: 22px;
+  line-height: 26px;
+  overflow-wrap: anywhere;
+  animation: think 2.6s steps(1) infinite;
+}
+
+.thought::before,
+.thought::after {
+  content: "";
+  position: absolute;
+  background: #f6f1e4;
+  /* a square with its corners left out reads as a tiny pixel circle */
+  box-shadow: 0 -3px 0 0 var(--ink), 0 3px 0 0 var(--ink), -3px 0 0 0 var(--ink), 3px 0 0 0 var(--ink);
+}
+
+.thought::before { width: 12px; height: 12px; left: -22px; bottom: -20px; }
+.thought::after { width: 6px; height: 6px; left: -38px; bottom: -32px; }
+
+.thought img.emoji {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  margin-right: 4px;
+  vertical-align: -4px;
+}
+
+@keyframes think {
+  50% { transform: translateY(-3px); }
 }
 
 .avatar-wrap {
@@ -428,26 +485,6 @@ img { display: block; }
   width: 12px;
   height: 12px;
   box-shadow: 0 0 0 3px var(--ink);
-}
-
-.pr-say {
-  --u: 2px;
-  --bd: var(--win-3);
-  --sh: transparent;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  max-width: 100%;
-  margin: 2px;
-  padding: 2px 10px;
-  background: var(--ink);
-  color: var(--text);
-  overflow-wrap: anywhere;
-}
-
-.pr-say img.emoji {
-  width: 20px;
-  height: 20px;
 }
 
 .badges {
@@ -2386,7 +2423,22 @@ html.love-open { overflow: hidden; }
 @media (max-width: 560px) {
   .stage { padding: 20px 8px 48px; }
   .win { padding: 32px 14px 18px; }
-  .profile { flex-direction: column; text-align: center; gap: 16px; }
+  .profile {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "avatar" "info";
+    justify-items: center;
+    row-gap: 16px;
+    text-align: center;
+  }
+  .profile.has-thought { grid-template-areas: "thought" "avatar" "info"; }
+  /* bubble sits above the head, a little to the right; dots fall toward the head */
+  .thought {
+    justify-self: center;
+    max-width: calc(100% - 48px);
+    margin: 6px 0 22px 36px;
+  }
+  .thought::before { left: 38%; bottom: -24px; }
+  .thought::after { left: calc(38% - 16px); bottom: -38px; }
   .profile-info { align-items: center; }
   .meta, .badges, .presence { justify-content: center; }
   /* phones: compact notices so they cover less of the page */
