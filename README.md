@@ -9,11 +9,12 @@ Giao diện kiểu game pixel 8-bit, một trang đơn:
 - Màn hình "nhấn để vào" kiểu PRESS START (để trình duyệt cho phép phát nhạc)
 - Nền bầu trời đêm pixel: dải màu, trăng khuyết, đồi, sao vuông lấp lánh và thỉnh thoảng có sao băng (hoặc tuyết rơi, video, ảnh)
 - Các khung viền pixel kiểu menu RPG, con trỏ chuột pixel, chữ pixel có đủ dấu tiếng Việt (VT323, Tiny5)
-- **Người chơi 1**: avatar Discord trong khung tròn pixel, chấm trạng thái, huy hiệu, bio gõ chữ trong hộp thoại RPG, mạng xã hội
+- **Người chơi 1**: avatar Discord trong khung tròn pixel, trạng thái Discord (online/idle/không làm phiền + custom status), huy hiệu, bio gõ chữ trong hộp thoại RPG, mạng xã hội
 - **Người yêu tôi**: thẻ hồng, bấm vào mở trang riêng màu hồng kem của cô ấy
 - **Máy nghe nhạc cassette**: cuộn băng quay khi phát, băng chạy từ cuộn trái sang cuộn phải theo bài hát, tua, trộn bài, lặp lại, âm lượng, danh sách bài có con trỏ ▶ kiểu menu game, điều khiển bằng phím media của máy
 - **Game tôi chơi** (WuWa · Genshin · HSR): tab chuyển có hiệu ứng quét màn hình 8-bit, thanh EXP cho cấp, bảng chỉ số kiểu RPG, nhân vật trưng bày, chấm "Đang chơi" khi Discord thấy bạn đang mở game
-- **Đang làm gì**: Discord, game đang mở, Spotify (có thanh tiến trình), GitHub; tự cập nhật không cần tải lại trang
+- **Thông báo góc dưới bên trái**: khi bạn mở game/app hoặc nghe Spotify, một thông báo pixel trượt vào, ở đó suốt lúc đang dùng (có nút × để tắt) rồi tự trượt đi khi bạn thoát; tự cập nhật không cần tải lại trang
+- **Nút nhảy nhanh (PC)**: 3 nút ở mép phải (người · nốt nhạc · tay cầm) cuộn tới Người chơi 1, máy nghe nhạc, game; nút của khung đang xem sáng lên
 - Tự co giãn trên điện thoại, tôn trọng cài đặt "giảm chuyển động" của hệ điều hành
 
 ## Cấu trúc
@@ -118,6 +119,5 @@ python3 -m http.server 8000
 
 ## Ghi chú
 
-- Thẻ GitHub gọi API công khai của GitHub (giới hạn 60 lượt/giờ cho mỗi người xem, đã có cache 10 phút).
 - Biểu tượng: [pixelarticons](https://pixelarticons.com) (MIT) và [Font Awesome](https://fontawesome.com) (free, cho logo mạng xã hội). Phông chữ pixel: [VT323](https://fonts.google.com/specimen/VT323), [Tiny5](https://fonts.google.com/specimen/Tiny5). Trang người yêu: Quicksand, Dancing Script.
 - Chỉ dùng nhạc bạn có quyền sử dụng.

@@ -80,7 +80,7 @@ img { display: block; }
    A border made of box-shadows: corners are left out, which gives the stepped "pixel" corner.
    --bd border · --ol outline · --sh hard shadow under the frame · --lt/--dk inner bevel */
 .win, .win-title, .bio, .social, .badge, .link-btn, .lcard, .cassette, .pbtn, .px-list,
-.gm-tab, .gm-banner, .gm-stats, .gm-chip, .gm-char-img, .toast {
+.gm-tab, .gm-banner, .gm-stats, .gm-chip, .gm-char-img, .toast, .notice, .qn-btn, .pr-say {
   --u: var(--px);
   --bd: var(--hi);
   --ol: var(--ink);
@@ -258,6 +258,7 @@ img { display: block; }
 /* ---------- Windows ---------- */
 .win {
   position: relative;
+  scroll-margin-top: 48px; /* room for the title tab when jumping here */
   margin: 40px 8px 8px;
   padding: 34px 20px 22px;
   background: var(--win);
@@ -286,7 +287,6 @@ img { display: block; }
   text-transform: uppercase;
 }
 
-.win-activity:has(.activity:empty) { display: none; }
 
 /* ---------- Profile ---------- */
 .profile {
@@ -404,6 +404,51 @@ img { display: block; }
 }
 
 .meta i { color: var(--faint); }
+
+/* Discord status: square + state, then the custom status in a small speech box */
+.presence {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  margin: 0;
+  font-size: 22px;
+}
+
+.pr-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+}
+
+.presence .mini-dot {
+  position: static;
+  flex: none;
+  width: 12px;
+  height: 12px;
+  box-shadow: 0 0 0 3px var(--ink);
+}
+
+.pr-say {
+  --u: 2px;
+  --bd: var(--win-3);
+  --sh: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  margin: 2px;
+  padding: 2px 10px;
+  background: var(--ink);
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.pr-say img.emoji {
+  width: 20px;
+  height: 20px;
+}
 
 .badges {
   display: flex;
@@ -654,14 +699,6 @@ img { display: block; }
   color: var(--faint);
 }
 
-.stats {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0 14px;
-  font-size: 20px;
-  color: var(--muted);
-}
-
 /* Spotify progress: segmented bar */
 .stage .progress {
   height: 12px;
@@ -718,23 +755,125 @@ a.lcard:hover .lcard-go { animation: nudge 0.6s steps(2) infinite; }
   50% { transform: translateX(4px); }
 }
 
-/* ---------- Activity window ---------- */
-.activity {
+/* ---------- Notices (bottom-left): game / app / Spotify in progress ---------- */
+.notices {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  width: min(330px, calc(100vw - 48px));
+  pointer-events: none;
+}
+
+.notice {
+  position: relative;
+  padding: 12px 44px 12px 14px;
+  background: var(--win);
+  pointer-events: auto;
+  animation: notice-in 0.36s steps(6) both;
+}
+
+/* gold strip on the left, like an in-game pop-up */
+.notice::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 4px;
+  background: var(--gold);
+}
+
+.notice.is-leaving { animation: notice-out 0.36s steps(4) both; }
+
+@keyframes notice-in {
+  from { transform: translateX(calc(-100% - 48px)); }
+}
+
+@keyframes notice-out {
+  to { transform: translateX(calc(-100% - 48px)); }
+}
+
+.notice .acard-media { width: 64px; height: 64px; }
+.notice .acard-title { font-size: 24px; }
+.notice a.acard:hover .acard-title { color: var(--gold); }
+
+.nt-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--faint);
 }
 
-.activity .acard { padding: 12px 0; }
-.activity .acard:first-child { padding-top: 0; }
-.activity .acard:last-child { padding-bottom: 0; }
-
-/* dotted pixel divider */
-.activity .acard + .acard {
-  background: linear-gradient(90deg, var(--win-3) 50%, transparent 0) top / 8px 4px repeat-x;
-  padding-top: 16px;
+.nt-close:hover,
+.nt-close:focus-visible {
+  background: var(--win-3);
+  color: var(--text);
 }
 
-a.acard:hover .acard-title { color: var(--gold); }
+/* ---------- Quick jump buttons (PC, right edge) ---------- */
+.quick-nav {
+  position: fixed;
+  top: 50%;
+  right: 32px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  transform: translateY(-50%);
+}
+
+.qn-btn {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin: 8px;
+  padding: 0;
+  border: 0;
+  background: var(--win-3);
+  color: var(--text);
+}
+
+.qn-btn:hover {
+  --bd: var(--gold);
+  color: var(--gold);
+  transform: translateX(-4px);
+}
+
+.qn-btn:active {
+  --sh: transparent;
+  transform: translateY(4px);
+}
+
+.qn-btn[aria-current="true"] {
+  background: var(--gold);
+  color: var(--ink);
+}
+
+/* tooltip to the left of the button */
+.stage .qn-btn[data-tip]::after {
+  top: 50%;
+  right: calc(100% + 18px);
+  bottom: auto;
+  left: auto;
+  transform: translateY(-50%);
+}
+
+@media (max-width: 900px), (hover: none) {
+  .quick-nav { display: none; }
+}
 
 /* ---------- Music: cassette player ---------- */
 .cassette {
@@ -2249,7 +2388,17 @@ html.love-open { overflow: hidden; }
   .win { padding: 32px 14px 18px; }
   .profile { flex-direction: column; text-align: center; gap: 16px; }
   .profile-info { align-items: center; }
-  .meta, .badges { justify-content: center; }
+  .meta, .badges, .presence { justify-content: center; }
+  /* phones: compact notices so they cover less of the page */
+  .notices { right: 8px; bottom: 12px; left: 8px; gap: 14px; width: auto; }
+  .notice { padding: 8px 40px 8px 12px; }
+  .notice .acard { gap: 10px; }
+  .notice .acard-media { width: 44px; height: 44px; }
+  .notice .acard-label { margin-bottom: 2px; }
+  .notice .acard-title { font-size: 20px; }
+  .notice .acard-sub + .acard-sub,
+  .notice [data-sp-start] { display: none; }
+  .nt-close { top: 50%; transform: translateY(-50%); }
   .name { font-size: 24px; }
   .socials { gap: 10px; }
   .cs-window { margin: 12px 8px 0; }

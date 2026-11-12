@@ -2,7 +2,7 @@
  * Bio page runtime. Reads window.PROFILE from config.js.
  * Live data:
  *   - Discord presence + Spotify: Lanyard (https://github.com/Phineas/lanyard), REST + WebSocket
- *   - GitHub profile: public REST API (60 req/h per visitor IP, cached 10 min in sessionStorage)
+ *   - Genshin / HSR stats: assets/data/games.json (filled from Enka.Network by scripts/fetch-games.mjs)
  * No build step; works as-is on GitHub Pages.
  */
 (() => {
@@ -17,7 +17,9 @@
   const finePointer = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
   const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 
-  const state = { discord: null, lover: null, github: null };
+  const state = { discord: null, lover: null };
+  // name to show before (or without) Discord data: the page's <title> in index.html
+  const PAGE_TITLE = document.title;
 
   const validId = (v) => {
     const id = String(v || "").trim();
@@ -678,21 +680,18 @@
 
   function displayName() {
     const d = state.discord?.discord_user;
-    const g = state.github;
-    return cfg.name || d?.global_name || d?.display_name || g?.name || d?.username || g?.login || integ.github || "your name";
+    return cfg.name || d?.global_name || d?.display_name || d?.username || PAGE_TITLE || "?";
   }
 
   function handle() {
     if (cfg.username) return cfg.username;
-    const u = state.discord?.discord_user?.username || state.github?.login || integ.github;
+    const u = state.discord?.discord_user?.username;
     return u ? `@${u}` : "";
   }
 
   function avatarUrl() {
     if (cfg.avatar) return cfg.avatar;
     if (state.discord?.discord_user) return discordAvatar(state.discord.discord_user, 256);
-    if (state.github?.avatar_url) return state.github.avatar_url;
-    if (integ.github) return `https://github.com/${encodeURIComponent(integ.github)}.png?size=256`;
     return initialsAvatar(displayName());
   }
 
@@ -731,12 +730,41 @@
     const effect = (cfg.theme || {}).nameEffect || "glow";
     nameEl.className = `name${effect === "none" ? "" : ` fx-${effect}`}`;
 
+    renderPresence();
+
     const meta = $("#meta");
     const parts = [];
     const hd = handle();
     if (hd) parts.push(h("span", {}, hd));
     if (cfg.location) parts.push(h("span", {}, pxIcon("pin"), cfg.location));
     meta.replaceChildren(...parts);
+  }
+
+  // Player 1 status: a coloured square + online/idle/dnd/offline, then the Discord custom status
+  let presenceSig = null;
+  function renderPresence() {
+    const box = $("#presence");
+    const p = integ.showDiscord !== false ? state.discord : null;
+    const custom = p?.activities?.find((a) => a.type === 4);
+    const sig = JSON.stringify([p?.discord_status, custom?.state, custom?.emoji]);
+    if (sig === presenceSig) return;
+    presenceSig = sig;
+    box.hidden = !p;
+    if (!p) return;
+    const status = p.discord_status || "offline";
+    const nodes = [h("span", { class: "pr-status" }, h("span", { class: "mini-dot", "data-status": status }), STATUS_TEXT[status] || STATUS_TEXT.offline)];
+    if (custom && (custom.state || custom.emoji)) {
+      const say = h("span", { class: "pr-say" });
+      const e = custom.emoji;
+      if (e?.id) {
+        say.append(h("img", { class: "emoji", alt: e.name || "", src: `https://cdn.discordapp.com/emojis/${e.id}.${e.animated ? "gif" : "png"}?size=32` }));
+      } else if (e?.name) {
+        say.append(`${e.name} `);
+      }
+      if (custom.state) say.append(custom.state);
+      nodes.push(say);
+    }
+    box.replaceChildren(...nodes);
   }
 
   const SOCIAL = {
@@ -966,26 +994,6 @@
     return sub;
   }
 
-  function buildDiscordCard(p) {
-    const u = p.discord_user;
-    const sub = statusLine(p);
-
-    return cardShell({
-      href: `https://discord.com/users/${u.id}`,
-      media: mediaImg(discordAvatar(u, 128), {
-        round: true,
-        small: h("span", { class: "mini-dot", "data-status": p.discord_status || "offline" }),
-        fallbackIcon: "fa-brands fa-discord",
-      }),
-      label: "Discord",
-      labelIcon: "fa-brands fa-discord",
-      body: [
-        h("div", { class: "acard-title" }, u.global_name || u.display_name || u.username, h("small", {}, `@${u.username}`)),
-        sub,
-      ],
-    });
-  }
-
   function buildActivityCard(a) {
     const large = assetUrl(a.application_id, a.assets?.large_image);
     const smallSrc = assetUrl(a.application_id, a.assets?.small_image);
@@ -1027,25 +1035,6 @@
         h("div", { class: "acard-title" }, sp.song),
         h("div", { class: "acard-sub" }, `bởi ${String(sp.artist || "").replace(/;/g, ",")}`),
         progress,
-      ],
-    });
-  }
-
-  function buildGitHubCard(g) {
-    const stats = [
-      h("span", {}, icon("fa-solid fa-book"), `${g.public_repos} repo`),
-      h("span", {}, icon("fa-solid fa-users"), `${g.followers} follower`),
-      g.stars != null ? h("span", {}, icon("fa-solid fa-star"), `${g.stars} sao`) : null,
-    ];
-    return cardShell({
-      href: g.html_url,
-      media: mediaImg(g.avatar_url, { round: true, fallbackIcon: "fa-brands fa-github" }),
-      label: "GitHub",
-      labelIcon: "fa-brands fa-github",
-      body: [
-        h("div", { class: "acard-title" }, g.name || g.login, h("small", {}, `@${g.login}`)),
-        g.bio ? h("div", { class: "acard-sub" }, g.bio) : null,
-        h("div", { class: "stats" }, stats),
       ],
     });
   }
@@ -1850,60 +1839,151 @@
     };
   })();
 
-  // Keyed render: a card is rebuilt only when its data changed.
-  const cardCache = new Map();
+  /* ------------------------------------------------------------------ */
+  /* Notices: what I'm doing right now (a game, an app, Spotify) pops up */
+  /* in the bottom-left corner like a game notification, stays while it */
+  /* lasts, and slides away when it ends or the visitor closes it.       */
+  /* ------------------------------------------------------------------ */
+  const notices = (() => {
+    const box = $("#notices");
+    const live = new Map(); // key -> { el, sig, body }
+    const dismissed = new Set(); // event ids closed by the visitor
+    let ready = false; // only after the enter screen
 
-  function renderActivity() {
-    const specs = [];
-    const p = state.discord;
-
-    if (p && integ.showDiscord !== false) {
-      const u = p.discord_user;
-      const custom = (p.activities || []).find((a) => a.type === 4);
-      specs.push({
-        key: "discord",
-        sig: JSON.stringify([u.avatar, u.global_name, u.username, p.discord_status, custom?.state, custom?.emoji]),
-        build: () => buildDiscordCard(p),
-      });
+    function specs() {
+      const p = state.discord;
+      if (!p) return [];
+      const out = [];
       (p.activities || [])
         .filter((a) => a.type !== 4 && !isSpotify(a))
         .forEach((a, i) => {
-          specs.push({
-            key: `act:${a.application_id || a.name}:${i}`,
+          const key = `act:${a.application_id || a.name}:${i}`;
+          out.push({
+            key,
+            event: `${key}:${a.timestamps?.start || ""}`,
             sig: JSON.stringify([a.name, a.details, a.state, a.assets, a.timestamps?.start, a.url]),
             build: () => buildActivityCard(a),
           });
         });
+      if (integ.showSpotify !== false && p.listening_to_spotify && p.spotify) {
+        const sp = p.spotify;
+        out.push({
+          key: "spotify",
+          event: `spotify:${sp.track_id}`,
+          sig: JSON.stringify([sp.track_id, sp.timestamps?.start, sp.timestamps?.end]),
+          build: () => buildSpotifyCard(sp),
+        });
+      }
+      return out.filter((x) => !dismissed.has(x.event));
     }
 
-    if (p && integ.showSpotify !== false && p.listening_to_spotify && p.spotify) {
-      const sp = p.spotify;
-      specs.push({
-        key: "spotify",
-        sig: JSON.stringify([sp.track_id, sp.timestamps?.start, sp.timestamps?.end]),
-        build: () => buildSpotifyCard(sp),
+    function leave(key) {
+      const n = live.get(key);
+      if (!n) return;
+      live.delete(key);
+      n.el.classList.add("is-leaving");
+      setTimeout(() => n.el.remove(), reduceMotion ? 0 : 360);
+    }
+
+    function render() {
+      if (!ready || integ.showDiscord === false) return;
+      const want = specs();
+      const keys = new Set(want.map((x) => x.key));
+      for (const k of [...live.keys()]) if (!keys.has(k)) leave(k);
+      for (const x of want) {
+        const n = live.get(x.key);
+        if (n && n.sig === x.sig) continue;
+        if (n) {
+          // same app or song, new details: swap the content in place, no new pop-up
+          const body = x.build();
+          n.body.replaceWith(body);
+          Object.assign(n, { sig: x.sig, body, event: x.event });
+          continue;
+        }
+        const body = x.build();
+        const close = h("button", { class: "nt-close", type: "button", "aria-label": "Đóng thông báo" }, pxIcon("close"));
+        const el = h("div", { class: "notice", role: "status" }, body, close);
+        const entry = { el, sig: x.sig, body, event: x.event };
+        close.addEventListener("click", () => {
+          dismissed.add(entry.event);
+          leave(x.key);
+        });
+        live.set(x.key, entry);
+        box.append(el);
+      }
+      tickTimers();
+    }
+
+    return {
+      start() {
+        ready = true;
+        render();
+      },
+      render,
+    };
+  })();
+
+  /* Quick jump (PC): three buttons on the right edge scroll to Player 1, music and games,
+     and light up for the section in view. */
+  function setupQuickNav() {
+    const nav = $("#quick-nav");
+    const items = [
+      { el: $(".win-profile"), icon: "user", label: "Người chơi 1" },
+      { el: $("#music"), icon: "music", label: "Máy nghe nhạc" },
+      { el: $("#games"), icon: "gamepad", label: "Game" },
+    ].filter((x) => x.el && !x.el.hidden);
+    if (items.length < 2) return;
+
+    const buttons = items.map((x) =>
+      h(
+        "button",
+        {
+          class: "qn-btn",
+          type: "button",
+          "aria-label": x.label,
+          "data-tip": x.label,
+          onclick: () => x.el.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" }),
+        },
+        pxIcon(x.icon)
+      )
+    );
+    nav.replaceChildren(...buttons);
+    nav.hidden = false;
+
+    // The current section is the last one whose top has passed 40% of the screen. At the very
+    // bottom of the page the last section counts, since it may never reach that line.
+    const mark = (i) => buttons.forEach((b, k) => (k === i ? b.setAttribute("aria-current", "true") : b.removeAttribute("aria-current")));
+    let picked = -1; // a clicked button stays lit while its smooth scroll is running
+    let pickTimer;
+    const update = () => {
+      if (picked >= 0) return mark(picked);
+      const atBottom = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 4;
+      const mid = window.innerHeight * 0.4;
+      let best = 0;
+      items.forEach((x, i) => {
+        if (x.el.getBoundingClientRect().top - 40 <= mid) best = i;
       });
-    }
-
-    if (state.github) {
-      specs.push({ key: "github", sig: JSON.stringify(state.github), build: () => buildGitHubCard(state.github) });
-    }
-
-    const nodes = specs.map((s) => {
-      const cached = cardCache.get(s.key);
-      if (cached && cached.sig === s.sig) return cached.el;
-      const el = s.build();
-      cardCache.set(s.key, { sig: s.sig, el });
-      return el;
-    });
-    const keys = new Set(specs.map((s) => s.key));
-    for (const k of cardCache.keys()) if (!keys.has(k)) cardCache.delete(k);
-
-    const container = $("#activity");
-    const current = Array.from(container.children);
-    const same = current.length === nodes.length && current.every((n, i) => n === nodes[i]);
-    if (!same) container.replaceChildren(...nodes);
-    tickTimers();
+      mark(atBottom ? items.length - 1 : best);
+    };
+    buttons.forEach((b, i) =>
+      b.addEventListener("click", () => {
+        picked = i;
+        mark(i);
+      })
+    );
+    let raf = 0;
+    window.addEventListener("scroll", () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(update);
+      // once scrolling settles, go back to tracking the position
+      clearTimeout(pickTimer);
+      pickTimer = setTimeout(() => {
+        picked = -1;
+        update();
+      }, 160);
+    }, { passive: true });
+    window.addEventListener("resize", update);
+    update();
   }
 
   function tickTimers() {
@@ -1931,7 +2011,7 @@
     if (id === ME_ID) {
       state.discord = data;
       renderProfile();
-      renderActivity();
+      notices.render();
       games.renderLive();
     } else if (id === LOVER_ID) {
       state.lover = data;
@@ -2004,51 +2084,6 @@
     });
   }
 
-  async function loadGitHub() {
-    const user = String(integ.github || "").trim();
-    if (!user) return;
-    const cacheKey = `bio:gh:${user.toLowerCase()}`;
-
-    try {
-      const cached = JSON.parse(sessionStorage.getItem(cacheKey) || "null");
-      if (cached && Date.now() - cached.t < 10 * 60 * 1000) {
-        state.github = cached.d;
-        renderProfile();
-        renderActivity();
-        return;
-      }
-    } catch { /* ignore bad cache */ }
-
-    try {
-      const base = `https://api.github.com/users/${encodeURIComponent(user)}`;
-      const [uRes, rRes] = await Promise.all([fetch(base), fetch(`${base}/repos?per_page=100&type=owner`)]);
-      if (!uRes.ok) throw new Error(`HTTP ${uRes.status}`);
-      const u = await uRes.json();
-      const repos = rRes.ok ? await rRes.json() : null;
-      const stars = Array.isArray(repos)
-        ? repos.filter((r) => !r.fork).reduce((n, r) => n + (r.stargazers_count || 0), 0)
-        : null;
-      const d = {
-        login: u.login,
-        name: u.name,
-        bio: u.bio,
-        avatar_url: u.avatar_url,
-        html_url: u.html_url,
-        public_repos: u.public_repos,
-        followers: u.followers,
-        stars,
-      };
-      try {
-        sessionStorage.setItem(cacheKey, JSON.stringify({ t: Date.now(), d }));
-      } catch { /* storage full or disabled */ }
-      state.github = d;
-      renderProfile();
-      renderActivity();
-    } catch (err) {
-      console.warn("[bio] Không tải được thông tin GitHub:", err);
-    }
-  }
-
   /* ------------------------------------------------------------------ */
   /* Enter screen + boot                                                 */
   /* ------------------------------------------------------------------ */
@@ -2057,6 +2092,7 @@
     startTypewriter();
     music.play(); // deferred automatically if her page is open with its own song
     love.onEnter();
+    setTimeout(notices.start, reduceMotion ? 0 : 900); // after the windows have dropped in
   }
 
   function setupEnter() {
@@ -2094,10 +2130,10 @@
   renderLover();
   love.init();
   games.init();
+  setupQuickNav();
   setupCursor();
   startTitle();
   setupEnter();
   loadDiscord();
-  loadGitHub();
   setInterval(tickTimers, 1000);
 })();

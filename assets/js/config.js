@@ -2,15 +2,15 @@
  * ======================================================================
  *  CẤU HÌNH TRANG BIO — chỉ cần sửa file này
  * ======================================================================
- *  - Chuỗi để trống ("") nghĩa là tắt tính năng đó hoặc tự lấy từ Discord/GitHub.
+ *  - Chuỗi để trống ("") nghĩa là tắt tính năng đó hoặc tự lấy từ Discord.
  *  - File media (nhạc, video nền, ảnh) nên đặt trong thư mục assets/media/
  *    rồi ghi đường dẫn tương đối, ví dụ: "assets/media/song.mp3".
  */
 window.PROFILE = {
   /* ---------- Thông tin cá nhân ---------- */
-  name: "",                 // Tên hiển thị. Để trống = lấy tên Discord, rồi tới tên GitHub
-  username: "",             // Dòng nhỏ dưới tên, ví dụ "@minh". Để trống = @tài-khoản GitHub/Discord
-  avatar: "",               // URL ảnh đại diện. Để trống = avatar Discord, rồi tới avatar GitHub
+  name: "",                 // Tên hiển thị. Để trống = lấy tên Discord (chưa tải được thì dùng <title> trong index.html)
+  username: "",             // Dòng nhỏ dưới tên, ví dụ "@minh". Để trống = @tài-khoản Discord
+  avatar: "",               // URL ảnh đại diện. Để trống = avatar Discord
   location: "Việt Nam",     // Để trống để ẩn
 
   // Các dòng giới thiệu, sẽ được gõ lần lượt (hiệu ứng máy đánh chữ)
@@ -37,7 +37,6 @@ window.PROFILE = {
     { type: "discord", copy: "_veritas.haze", label: "Discord: _veritas.haze (bấm để sao chép)" },
     { type: "tiktok", url: "https://www.tiktok.com/@arli_flawless", label: "TikTok: @arli_flawless" },
     { type: "facebook", url: "https://www.facebook.com/veritas.haze", label: "Facebook" },
-    { type: "github", url: "https://github.com/nguyenanhquan04" },
     // { type: "instagram", url: "https://instagram.com/..." },
     // { type: "youtube", url: "https://youtube.com/@..." },
     // { type: "email", url: "mailto:ban@example.com" },
@@ -53,9 +52,8 @@ window.PROFILE = {
     // Discord User ID (Cài đặt > Nâng cao > bật Developer Mode, rồi chuột phải vào tên > Copy User ID).
     // BẮT BUỘC: tham gia server Lanyard https://discord.gg/UrXF2cfJ7F thì trạng thái mới hiện.
     discordId: "109027621051871232",
-    showDiscord: true,      // Thẻ trạng thái Discord + game/app đang dùng
-    showSpotify: true,      // Thẻ bài hát Spotify đang nghe (lấy qua Discord)
-    github: "nguyenanhquan04", // Tên tài khoản GitHub cho thẻ GitHub. Để trống để ẩn
+    showDiscord: true,      // Trạng thái Discord ở Người chơi 1 + thông báo game/app đang dùng (góc dưới trái)
+    showSpotify: true,      // Thông báo bài Spotify đang nghe (lấy qua Discord)
   },
 
   /* ---------- Thẻ người yêu ----------

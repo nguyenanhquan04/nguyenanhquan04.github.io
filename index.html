@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pixelarticons@1.8.2/fonts/pixelart-icons-font.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.3.1/css/all.min.css" referrerpolicy="no-referrer" />
   <!-- Tăng số ?v= mỗi khi sửa CSS/JS để người xem nhận bản mới ngay, không phải đợi cache 10 phút -->
-  <link rel="stylesheet" href="assets/css/style.css?v=10" />
+  <link rel="stylesheet" href="assets/css/style.css?v=11" />
 </head>
 <body>
   <!-- Nền: bầu trời đêm kiểu pixel (dải màu, trăng, đồi) + canvas sao & sao băng; hoặc video / ảnh -->
@@ -59,6 +59,7 @@
           <div class="profile-info">
             <h1 class="name" id="name"></h1>
             <p class="meta" id="meta"></p>
+            <p class="presence" id="presence" hidden></p>
             <div class="badges" id="badges"></div>
           </div>
         </header>
@@ -122,14 +123,14 @@
         <div class="gm-stage" id="gm-stage"></div>
       </section>
 
-      <!-- Đang làm gì: Discord, game đang mở, Spotify, GitHub (tự ẩn khi trống) -->
-      <section class="win win-activity" aria-labelledby="t-activity">
-        <h2 class="win-title" id="t-activity"><i class="pixelart-icons-font-zap" aria-hidden="true"></i> Đang làm gì</h2>
-        <div class="activity" id="activity"></div>
-      </section>
-
       <footer class="footer" id="footer"></footer>
     </div>
+
+    <!-- PC: nút nhảy nhanh tới Người chơi 1 · Máy nghe nhạc · Game -->
+    <nav class="quick-nav" id="quick-nav" aria-label="Nhảy nhanh" hidden></nav>
+
+    <!-- Góc dưới bên trái: thông báo khi đang chơi game / mở app / nghe Spotify -->
+    <div class="notices" id="notices" aria-live="polite"></div>
   </main>
 
   <!-- Trang riêng của người yêu (mở khi bấm thẻ "Người yêu tôi", hoặc vào thẳng /#love) -->
@@ -205,7 +206,7 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-  <script src="assets/js/config.js?v=10"></script>
-  <script src="assets/js/main.js?v=10"></script>
+  <script src="assets/js/config.js?v=11"></script>
+  <script src="assets/js/main.js?v=11"></script>
 </body>
 </html>
