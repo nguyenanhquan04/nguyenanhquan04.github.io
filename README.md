@@ -119,5 +119,5 @@ python3 -m http.server 8000
 ## Ghi chú
 
 - Thẻ GitHub gọi API công khai của GitHub (giới hạn 60 lượt/giờ cho mỗi người xem, đã có cache 10 phút).
-- Biểu tượng: [Font Awesome](https://fontawesome.com) (free). Phông chữ: [Outfit](https://fonts.google.com/specimen/Outfit).
+- Biểu tượng: [pixelarticons](https://pixelarticons.com) (MIT) và [Font Awesome](https://fontawesome.com) (free, cho logo mạng xã hội). Phông chữ pixel: [VT323](https://fonts.google.com/specimen/VT323), [Tiny5](https://fonts.google.com/specimen/Tiny5). Trang người yêu: Quicksand, Dancing Script.
 - Chỉ dùng nhạc bạn có quyền sử dụng.
