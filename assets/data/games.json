@@ -1,0 +1,153 @@
+{
+  "updatedAt": "2026-11-12T07:06:02.348Z",
+  "genshin": {
+    "uid": "815953629",
+    "nickname": "️️️️️️️",
+    "signature": "Tích Nguyên Thạch Cho Skirk UwU",
+    "level": 60,
+    "worldLevel": 9,
+    "achievements": 1305,
+    "abyss": "10-3",
+    "theater": "",
+    "friendship": 37,
+    "characters": [
+      {
+        "name": "Skirk",
+        "level": 95,
+        "rarity": 5,
+        "element": "Ice",
+        "icon": "https://enka.network/ui/UI_AvatarIcon_SkirkNew.png"
+      },
+      {
+        "name": "Mavuika",
+        "level": 90,
+        "rarity": 5,
+        "element": "Fire",
+        "icon": "https://enka.network/ui/UI_AvatarIcon_Mavuika.png"
+      },
+      {
+        "name": "Columbina",
+        "level": 90,
+        "rarity": 5,
+        "element": "Water",
+        "icon": "https://enka.network/ui/UI_AvatarIcon_Columbina.png"
+      },
+      {
+        "name": "Raiden Shogun",
+        "level": 90,
+        "rarity": 5,
+        "element": "Electric",
+        "icon": "https://enka.network/ui/UI_AvatarIcon_Shougun.png"
+      },
+      {
+        "name": "Furina",
+        "level": 90,
+        "rarity": 5,
+        "element": "Water",
+        "icon": "https://enka.network/ui/UI_AvatarIcon_Furina.png"
+      },
+      {
+        "name": "Nahida",
+        "level": 90,
+        "rarity": 5,
+        "element": "Grass",
+        "icon": "https://enka.network/ui/UI_AvatarIcon_Nahida.png"
+      },
+      {
+        "name": "Zibai",
+        "level": 90,
+        "rarity": 5,
+        "element": "Rock",
+        "icon": "https://enka.network/ui/UI_AvatarIcon_Zibai.png"
+      },
+      {
+        "name": "Vodyanitsa",
+        "level": 90,
+        "rarity": 5,
+        "element": "Water",
+        "icon": "https://enka.network/ui/UI_AvatarIcon_Vodyanitsa.png"
+      },
+      {
+        "name": "Sandrone",
+        "level": 90,
+        "rarity": 5,
+        "element": "Ice",
+        "icon": "https://enka.network/ui/UI_AvatarIcon_MarionetteNew.png"
+      },
+      {
+        "name": "Odette",
+        "level": 90,
+        "rarity": 5,
+        "element": "Ice",
+        "icon": "https://enka.network/ui/UI_AvatarIcon_Odette.png"
+      },
+      {
+        "name": "Citlali",
+        "level": 90,
+        "rarity": 5,
+        "element": "Ice",
+        "icon": "https://enka.network/ui/UI_AvatarIcon_Citlali.png"
+      },
+      {
+        "name": "Yae Miko",
+        "level": 90,
+        "rarity": 5,
+        "element": "Electric",
+        "icon": "https://enka.network/ui/UI_AvatarIcon_Yae.png"
+      }
+    ]
+  },
+  "hsr": {
+    "uid": "801505978",
+    "nickname": "Jingliu",
+    "signature": "Herta E2S1, Jingliu E6S1, Ruan Mei E1S1",
+    "level": 70,
+    "worldLevel": 6,
+    "achievements": 1196,
+    "characterCount": 63,
+    "lightCones": 117,
+    "universe": 9,
+    "characters": [
+      {
+        "name": "Đại Herta",
+        "level": 80,
+        "rarity": 5,
+        "element": "Ice",
+        "eidolon": 2,
+        "icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/character/1401.png"
+      },
+      {
+        "name": "Jingliu",
+        "level": 80,
+        "rarity": 5,
+        "element": "Ice",
+        "eidolon": 6,
+        "icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/character/1212.png"
+      },
+      {
+        "name": "Cyrene",
+        "level": 80,
+        "rarity": 5,
+        "element": "Ice",
+        "eidolon": 2,
+        "icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/character/1415.png"
+      },
+      {
+        "name": "Evernight",
+        "level": 80,
+        "rarity": 5,
+        "element": "Ice",
+        "eidolon": 0,
+        "icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/character/1413.png"
+      },
+      {
+        "name": "Robin",
+        "level": 80,
+        "rarity": 5,
+        "element": "Physical",
+        "eidolon": 2,
+        "icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/character/1309.png"
+      }
+    ]
+  }
+}

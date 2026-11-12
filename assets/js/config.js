@@ -114,8 +114,8 @@ window.PROFILE = {
         stats: [],          // ví dụ [{ label: "Tháp Ảo Ảnh", value: "Tầng 4" }]
         characters: [],     // ví dụ ["Camellya", "Jinhsi"]
       },
-      { id: "genshin", name: "Genshin Impact", short: "Genshin", uid: "", server: "", stats: [] },
-      { id: "hsr", name: "Honkai: Star Rail", short: "HSR", uid: "", server: "", stats: [] },
+      { id: "genshin", name: "Genshin Impact", short: "Genshin", uid: "815953629", server: "", stats: [] },
+      { id: "hsr", name: "Honkai: Star Rail", short: "HSR", uid: "801505978", server: "", stats: [] },
     ],
   },
 

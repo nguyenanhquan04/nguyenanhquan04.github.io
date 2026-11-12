@@ -31,10 +31,11 @@ async function getJSON(url) {
 }
 
 async function genshin(uid) {
+  // store/gi/ is Enka's current character store; the older store/characters.json misses new characters
   const [data, chars, loc] = await Promise.all([
     getJSON(`https://enka.network/api/uid/${uid}/?info`),
-    getJSON(`${ENKA_STORE}/characters.json`),
-    getJSON(`${ENKA_STORE}/loc.json`),
+    getJSON(`${ENKA_STORE}/gi/avatars.json`),
+    getJSON(`${ENKA_STORE}/gi/locs.json`),
   ]);
   const p = data.playerInfo || {};
   const name = (hash) => loc.vi?.[hash] || loc.en?.[hash] || "";
@@ -47,7 +48,10 @@ async function genshin(uid) {
       level: a.level ?? null,
       rarity: c.QualityType === "QUALITY_ORANGE" ? 5 : 4,
       element: c.Element || "",
-      icon: c.SideIconName ? `https://enka.network/ui/${c.SideIconName.replace("_Side_", "_")}.png` : "",
+      // "/ui/UI_AvatarIcon_Side_X.png" (new store) or "UI_AvatarIcon_Side_X" (old store) -> full icon URL
+      icon: c.SideIconName
+        ? `https://enka.network/ui/${c.SideIconName.replace(/^\/?ui\//, "").replace(/\.png$/, "").replace("_Side_", "_")}.png`
+        : "",
     };
   });
   return {
