@@ -137,6 +137,12 @@ window.PROFILE = {
     repeat: "all",          // "all" = lặp cả danh sách | "one" = lặp một bài | "off" = hết danh sách thì dừng
     tracks: [
       {
+        src: "assets/media/Phố Mùa Đông - Hà Anh Tuấn.mp3",
+        title: "Phố Mùa Đông",
+        artist: "Hà Anh Tuấn",
+        cover: "",
+      },
+      {
         src: "assets/media/Midnight - BEAST.mp3",
         title: "Midnight (별 헤는 밤)",
         artist: "BEAST",
