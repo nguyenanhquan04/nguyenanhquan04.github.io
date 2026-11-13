@@ -16,6 +16,33 @@
  * produce identical data. Paste this whole file into the Cloudflare dashboard editor.
  */
 
+// ---------------------------------------------------------------------------
+// Wuthering Waves (Kuro official API) — optional, off unless Kuro auth is set up.
+// WuWa has no public per-UID API. This uses Kuro's own launcher API through an
+// auto-login token, the same flow as https://github.com/Wuthery/kuro.py .
+//
+// Your email/password are NEVER stored here. You run the kuro.py Colab notebook
+// once (it solves the captcha interactively) to get an auto-login token, then put
+// that token + its device id into the Worker. See cloudflare/README.md.
+//
+// Needs a KV namespace bound as WUWA_KV (stores the rotating token + cached stats)
+// and these Worker variables/secrets:
+//   KURO_AUTO_TOKEN   auto-login token from the notebook (seed; rotates into KV)
+//   KURO_DEVICE_ID    the UUID the notebook logged in with (must stay the same)
+// Optional: KURO_REGION to force one account region (e.g. "Europe"), else the
+// highest-level account is used.
+const KURO = {
+  APP_KEY: "32gh5r0p35ullmxrzzwk40ly",
+  CLIENT_ID: "7rxmydkibzzsf12om5asjnoo",
+  CLIENT_SECRET: "32gh5r0p35ullmxrzzwk40ly",
+  AUTO_LOGIN: "https://sdkapi.kurogame-service.com/sdkcom/v2/login/auto.lg",
+  GET_TOKEN: "https://sdkapi.kurogame-service.com/sdkcom/v2/auth/getToken.lg",
+  OAUTH_CODE: "https://sdkapi.kurogame-service.com/sdkcom/v2/user/oauth/code/generate.lg",
+  PLAYER_INFO: "https://pc-launcher-sdk-api.kurogame.net/game/queryPlayerInfo",
+  PLAYER_ROLE: "https://pc-launcher-sdk-api.kurogame.net/game/queryRole",
+};
+const WUWA_FRESH_SECONDS = 1800; // refresh the Kuro chain at most every 30 min
+
 const SITE_CONFIG_URL = "https://nguyenanhquan.tech/assets/js/config.js";
 const ALLOWED_ORIGINS = ["https://nguyenanhquan.tech", "https://www.nguyenanhquan.tech", "https://nguyenanhquan04.github.io"];
 const FRESH_SECONDS = 600; // 10 minutes
@@ -120,7 +147,20 @@ async function getStats(origin, env, ctx) {
   const uids = await readUids(env);
   const out = {};
 
+  // Wuthering Waves runs on its own (Kuro login chain + KV), only when configured.
+  const wuwaTask =
+    env.WUWA_KV && (env.KURO_AUTO_TOKEN || (await env.WUWA_KV.get("auto_token")))
+      ? wutheringWaves(env)
+          .then((d) => {
+            if (d) out.wuwa = d;
+          })
+          .catch((err) => {
+            out.errors = { ...(out.errors || {}), wuwa: String(err?.message || err) };
+          })
+      : null;
+
   await Promise.all(
+    [wuwaTask].filter(Boolean).concat(
     Object.entries(uids).map(async ([game, uid]) => {
       const fresh = await cacheGet(keyFor("fresh", game, uid));
       if (fresh) {
@@ -143,9 +183,10 @@ async function getStats(origin, env, ctx) {
         out.errors = { ...(out.errors || {}), [game]: String(err?.message || err) };
       }
     })
+    )
   );
-  // "updated" = when the oldest of the shown profiles was fetched from Enka
-  const times = Object.keys(uids).map((g) => out[g]?.fetchedAt).filter(Boolean).sort();
+  // "updated" = when the oldest shown profile was fetched
+  const times = ["genshin", "hsr", "wuwa"].map((g) => out[g]?.fetchedAt).filter(Boolean).sort();
   return { updatedAt: times[0] || new Date().toISOString(), ...out };
 }
 
@@ -220,3 +261,194 @@ async function starRail(uid) {
 }
 
 const FETCHERS = { genshin, hsr: starRail };
+
+/* ------------------------------------------------------------------ */
+/* Wuthering Waves — Kuro login chain                                  */
+/* ------------------------------------------------------------------ */
+// Returns curated account stats, cached in KV for WUWA_FRESH_SECONDS. Rotates and persists the
+// auto-login token so the password is never needed again after the one-time notebook bootstrap.
+async function wutheringWaves(env) {
+  const kv = env.WUWA_KV;
+  const cached = JSON.parse((await kv.get("stats")) || "null");
+  if (cached && Date.now() - new Date(cached.fetchedAt).getTime() < WUWA_FRESH_SECONDS * 1000) {
+    return cached;
+  }
+  try {
+    const stats = await kuroFetchRole(env, kv);
+    stats.fetchedAt = new Date().toISOString();
+    await kv.put("stats", JSON.stringify(stats));
+    return stats;
+  } catch (err) {
+    if (cached) return { ...cached, stale: true }; // Kuro down / token expired: keep the old copy
+    throw err;
+  }
+}
+
+async function kuroPost(url, data) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded", "User-Agent": UA },
+    body: new URLSearchParams(data).toString(),
+  });
+  return res.json();
+}
+
+async function kuroPostJSON(url, data) {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "User-Agent": UA },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+
+async function kuroFetchRole(env, kv) {
+  const deviceId = (await kv.get("device_id")) || env.KURO_DEVICE_ID;
+  const autoToken = (await kv.get("auto_token")) || env.KURO_AUTO_TOKEN;
+  if (!deviceId || !autoToken) throw new Error("Chưa cấu hình KURO_DEVICE_ID / KURO_AUTO_TOKEN");
+
+  // 1. auto-login with the saved token (no password, avoids the captcha)
+  const login = signed(
+    {
+      token: autoToken,
+      client_id: KURO.CLIENT_ID,
+      deviceNum: deviceId,
+      sdkVersion: "2.6.0h",
+      productId: "A1730",
+      projectId: "G153",
+      redirect_uri: 1,
+      response_type: "code",
+      channelId: "171",
+    },
+    KURO.APP_KEY
+  );
+  const loginRsp = await kuroPost(KURO.AUTO_LOGIN, login);
+  if (loginRsp.codes != null && loginRsp.codes !== 0) {
+    throw new Error(`auto-login: ${loginRsp.error_description || loginRsp.msg || loginRsp.codes}`);
+  }
+  if (loginRsp.autoToken && loginRsp.autoToken !== autoToken) await kv.put("auto_token", loginRsp.autoToken);
+  if (deviceId && !(await kv.get("device_id"))) await kv.put("device_id", deviceId);
+
+  // 2. authorization code -> access token
+  const tokenRsp = await kuroPost(
+    KURO.GET_TOKEN,
+    signed(
+      {
+        client_id: KURO.CLIENT_ID,
+        deviceNum: deviceId,
+        client_secret: KURO.CLIENT_SECRET,
+        code: loginRsp.code,
+        productId: "A1725",
+        projectId: "G153",
+        redirect_uri: 1,
+        grant_type: "authorization_code",
+      },
+      KURO.APP_KEY
+    )
+  );
+  if (tokenRsp.codes != null && tokenRsp.codes !== 0) throw new Error(`getToken: ${tokenRsp.error_description || tokenRsp.codes}`);
+
+  // 3. access token -> oauth code (no sign on this one, per kuro.py)
+  const oauthRsp = await kuroPost(KURO.OAUTH_CODE, {
+    client_id: KURO.CLIENT_ID,
+    deviceNum: deviceId,
+    client_secret: KURO.CLIENT_SECRET,
+    access_token: tokenRsp.access_token,
+    productId: "A1725",
+    projectId: "G153",
+    redirect_uri: 1,
+    scope: "launcher",
+  });
+  const oauthCode = oauthRsp.oauthCode;
+  if (!oauthCode) throw new Error(`oauth: ${oauthRsp.error_description || oauthRsp.codes || "no code"}`);
+
+  // 4. oauth code -> player accounts (region name -> { uid, level, ... })
+  const infoRsp = await retry(() => kuroPostJSON(KURO.PLAYER_INFO, { oauthCode }), (r) => r.code === 1005);
+  if (infoRsp.code !== 0) throw new Error(`playerInfo: ${infoRsp.message || infoRsp.code}`);
+  const accounts = Object.entries(infoRsp.data).map(([region, info]) => ({ region, ...JSON.parse(info) }));
+  const forced = env.KURO_REGION && accounts.find((a) => a.region === env.KURO_REGION);
+  const account = forced || accounts.sort((a, b) => (b.level || 0) - (a.level || 0))[0];
+  if (!account) throw new Error("playerInfo: no accounts");
+
+  // 5. role detail for that account
+  const roleRsp = await retry(
+    () => kuroPostJSON(KURO.PLAYER_ROLE, { oauthCode, playerId: account.roleId, region: account.region }),
+    (r) => r.code === 1005
+  );
+  if (roleRsp.code !== 0) throw new Error(`queryRole: ${roleRsp.message || roleRsp.code}`);
+  const base = JSON.parse(roleRsp.data[account.region]).Base;
+
+  return {
+    uid: String(account.roleId),
+    nickname: base.Name || account.roleName || "",
+    region: account.region,
+    level: base.Level ?? null, // Union Level
+    worldLevel: base.WorldLevel ?? null,
+    characterCount: base.RoleNum ?? null,
+    activeDays: base.ActiveDays ?? null,
+    sonanceCasket: base.SoundBox ?? null,
+  };
+}
+
+function retry(fn, again, max = 3) {
+  return fn().then((r) => (max > 0 && again(r) ? retry(fn, again, max - 1) : r));
+}
+
+/* ---- Kuro auth crypto (ported from kuro.py; verified byte-for-byte) ---- */
+function signed(data, appKey) {
+  return { ...data, sign: encodeMd5Parameter(data, appKey) };
+}
+
+function encodeMd5Parameter(m, appKey) {
+  let s = "";
+  for (const key of Object.keys(m).sort()) {
+    if (key !== "sign" && key !== "market" && m[key] != null) s += `${key}=${m[key]}&`;
+  }
+  return md5Code(s + appKey);
+}
+
+function md5Code(code) {
+  const b = [...md5Hex(code).toLowerCase()];
+  if (b.length >= 23) {
+    [b[1], b[13]] = [b[13], b[1]];
+    [b[5], b[17]] = [b[17], b[5]];
+    [b[7], b[23]] = [b[23], b[7]];
+  }
+  return b.join("");
+}
+
+function md5Hex(str) {
+  const msg = new TextEncoder().encode(str);
+  const n = msg.length;
+  const buf = new Uint8Array((((n + 8) >> 6) + 1) * 64);
+  buf.set(msg);
+  buf[n] = 0x80;
+  const dv = new DataView(buf.buffer);
+  const bits = n * 8;
+  dv.setUint32(buf.length - 8, bits >>> 0, true);
+  dv.setUint32(buf.length - 4, Math.floor(bits / 0x100000000) >>> 0, true);
+
+  let a0 = 0x67452301, b0 = 0xefcdab89, c0 = 0x98badcfe, d0 = 0x10325476;
+  const S = [7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21];
+  const K = [];
+  for (let i = 0; i < 64; i++) K[i] = Math.floor(Math.abs(Math.sin(i + 1)) * 2 ** 32) >>> 0;
+  const rol = (x, c) => (x << c) | (x >>> (32 - c));
+  for (let off = 0; off < buf.length; off += 64) {
+    const M = [];
+    for (let i = 0; i < 16; i++) M[i] = dv.getUint32(off + i * 4, true);
+    let A = a0, B = b0, C = c0, D = d0;
+    for (let i = 0; i < 64; i++) {
+      let F, g;
+      if (i < 16) { F = (B & C) | (~B & D); g = i; }
+      else if (i < 32) { F = (D & B) | (~D & C); g = (5 * i + 1) % 16; }
+      else if (i < 48) { F = B ^ C ^ D; g = (3 * i + 5) % 16; }
+      else { F = C ^ (B | ~D); g = (7 * i) % 16; }
+      F = (F + A + K[i] + M[g]) >>> 0;
+      A = D; D = C; C = B;
+      B = (B + rol(F, S[i])) >>> 0;
+    }
+    a0 = (a0 + A) >>> 0; b0 = (b0 + B) >>> 0; c0 = (c0 + C) >>> 0; d0 = (d0 + D) >>> 0;
+  }
+  const hex = (x) => [0, 1, 2, 3].map((i) => ((x >>> (i * 8)) & 0xff).toString(16).padStart(2, "0")).join("");
+  return hex(a0) + hex(b0) + hex(c0) + hex(d0);
+}

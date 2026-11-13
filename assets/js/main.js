@@ -1590,7 +1590,7 @@
     if (!list.length) return { init() {}, renderLive() {} };
 
     const root = $("#games");
-    const FETCHED = new Set(["genshin", "hsr"]);
+    const FETCHED = new Set(["genshin", "hsr", "wuwa"]);
     const DISCORD_NAMES = { wuwa: ["Wuthering Waves"], genshin: ["Genshin Impact"], hsr: ["Honkai: Star Rail", "Honkai Star Rail"] };
     const LEVEL_LABEL = { wuwa: "Union Level", genshin: "Cấp Mạo Hiểm", hsr: "Cấp Khai Phá" };
     const LEVEL_SHORT = { wuwa: "UL", genshin: "AR", hsr: "TL" };
@@ -1612,6 +1612,8 @@
     function statsFor(g, d) {
       const out = [];
       const add = (label, value) => filled(value) && out.push({ label, value: fmtNum(value) });
+      // The level shows as an EXP bar when a max is known, otherwise as a plain stat here.
+      if (!levelInfo(g, d)) add(LEVEL_LABEL[g.id] || "Cấp", d?.level ?? g.level);
       if (g.id === "genshin" && d) {
         add("Cấp Thế Giới", d.worldLevel);
         add("Thành tựu", d.achievements);
@@ -1624,8 +1626,11 @@
         add("Nhân vật", d.characterCount);
         add("Nón Ánh Sáng", d.lightCones);
         add("Vũ Trụ Mô Phỏng", d.universe ? `Thế giới ${d.universe}` : "");
-      } else if (!levelInfo(g, d)) {
-        add(LEVEL_LABEL[g.id] || "Cấp", g.level);
+      } else if (g.id === "wuwa" && d) {
+        add("Cấp Thế Giới", d.worldLevel);
+        add("Nhân vật", d.characterCount);
+        add("Ngày hoạt động", d.activeDays);
+        add("Sonance Casket", d.sonanceCasket);
       }
       (Array.isArray(g.stats) ? g.stats : []).forEach((s) => s && s.label && add(s.label, s.value));
       return out;
@@ -1681,7 +1686,8 @@
     }
 
     function buildPanel(g, i) {
-      const d = data[g.id] && data[g.id].uid === uidOf(g) ? data[g.id] : null;
+      // use live data when the UID matches, or when config leaves uid blank (WuWa: Kuro picks it)
+      const d = data[g.id] && (!uidOf(g) || data[g.id].uid === uidOf(g)) ? data[g.id] : null;
       const uid = uidOf(g);
       const nickname = visible(g.nickname) || visible(d?.nickname); // config.js wins, so a name can be set by hand
       const stats = statsFor(g, d);
@@ -1724,8 +1730,10 @@
               "p",
               { class: "gm-source" },
               "Dữ liệu từ ",
-              h("a", { href: "https://enka.network", target: "_blank", rel: "noopener noreferrer" }, "Enka.Network"),
-              data.updatedAt ? ` · cập nhật ${fmtUpdated(data.updatedAt)}` : ""
+              g.id === "wuwa"
+                ? h("a", { href: "https://wutheringwaves.kurogames.com", target: "_blank", rel: "noopener noreferrer" }, "Kuro Games")
+                : h("a", { href: "https://enka.network", target: "_blank", rel: "noopener noreferrer" }, "Enka.Network"),
+              d.fetchedAt ? ` · cập nhật ${fmtUpdated(d.fetchedAt)}` : data.updatedAt ? ` · cập nhật ${fmtUpdated(data.updatedAt)}` : ""
             )
           : null
       );
@@ -1848,7 +1856,8 @@
           e.preventDefault();
           select((current + (e.key === "ArrowRight" ? 1 : -1) + list.length) % list.length, { focus: true });
         });
-        if (list.some((g) => FETCHED.has(g.id) && uidOf(g))) {
+        // fetch if any game has a UID, or a live Worker is set (WuWa has no UID in config)
+        if (gc.liveUrl || list.some((g) => FETCHED.has(g.id) && uidOf(g))) {
           loadData().then((ok) => {
             if (!ok) return;
             build();

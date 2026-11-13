@@ -35,6 +35,51 @@ liveUrl: "https://stats.nguyenanhquan.tech/",
 
 (Hoặc nhắn Kiro làm bước này.)
 
+## Thêm Wuthering Waves (tuỳ chọn)
+
+WuWa **không** có API công khai theo UID như Genshin/HSR. Worker lấy stats qua API launcher chính chủ của Kuro, bằng **auto-login token** (cùng luồng như [kuro.py](https://github.com/Wuthery/kuro.py)).
+
+> **Mật khẩu của bạn KHÔNG bao giờ được lưu ở đây.** Bạn chạy notebook kuro.py **một lần** (nó tự giải captcha) để lấy token, rồi dán token đó vào Worker. Worker tự xoay (rotate) và lưu token mới vào KV, nên token seed chỉ dùng để khởi động.
+
+### 1. Lấy auto-login token (chạy 1 lần)
+
+1. Mở notebook Colab của kuro.py: https://gist.github.com/SimpNick6703/c7e4d18f569b2808cd4d8dea808f0a8a
+2. Chạy, đăng nhập bằng tài khoản Kuro của bạn, giải captcha khi được hỏi.
+3. Lấy **hai** giá trị notebook in ra và giữ lại:
+   - `auto_token` (chuỗi auto-login token)
+   - `device_id` (UUID của thiết bị đã đăng nhập — phải giữ nguyên, token gắn với đúng device id này)
+
+### 2. Tạo KV namespace
+
+1. Dashboard → **Storage & Databases** → **KV** → **Create a namespace**.
+2. Đặt tên `wuwa-kv` → **Add**.
+3. Mở Worker `bio-stats` → **Settings** → **Bindings** → **Add** → **KV namespace**.
+   - **Variable name:** `WUWA_KV`  (đúng chữ hoa)
+   - **KV namespace:** chọn `wuwa-kv` vừa tạo → **Deploy**.
+
+### 3. Khai báo token cho Worker
+
+Trong Worker `bio-stats` → **Settings** → **Variables and Secrets** → **Add**:
+
+| Tên | Loại | Giá trị |
+| --- | --- | --- |
+| `KURO_AUTO_TOKEN` | **Secret** (Encrypt) | `auto_token` ở bước 1 |
+| `KURO_DEVICE_ID` | **Secret** (Encrypt) | `device_id` ở bước 1 |
+| `KURO_REGION` | Text (tuỳ chọn) | ví dụ `Europe` — ép đúng 1 region; bỏ trống thì Worker tự chọn tài khoản level cao nhất |
+
+Bấm **Deploy** sau khi thêm.
+
+### 4. Dán lại code Worker rồi Deploy
+
+File `games-worker.mjs` đã có phần WuWa. Vào **Edit code**, dán lại **toàn bộ** nội dung mới nhất và **Deploy** (xem [Sửa Worker sau này](#sửa-worker-sau-này)).
+
+### 5. Kiểm tra
+
+- Mở `https://stats.nguyenanhquan.tech/` → JSON phải có thêm khối `wuwa` với `level`, `stats` (Union/World/nhân vật/ngày/Sonance).
+- Nếu `wuwa` có `"stale": true` kèm `errors` → chuỗi Kuro đang lỗi (thường là **token hết hạn**). Chạy lại notebook bước 1 để lấy token mới, cập nhật lại `KURO_AUTO_TOKEN` ở bước 3.
+
+> **Lưu ý:** phần crypto + toàn bộ chuỗi login đã được kiểm chứng khớp byte-for-byte với kuro.py và chạy qua mock đầy đủ, **nhưng chưa chạy thật với tài khoản Kuro thật** (vì cần captcha tương tác). Nếu lần đầu lỗi, gần như chắc là token/device id, chạy lại notebook là xong.
+
 ## Sửa Worker sau này
 
 Nếu `games-worker.mjs` trong repo thay đổi, mở lại **Edit code**, dán bản mới và **Deploy**. Worker không tự cập nhật theo repo.

@@ -93,7 +93,8 @@ window.PROFILE = {
    * nhân vật trưng bày...) lấy từ Enka.Network qua Cloudflare Worker (liveUrl, cập nhật ~10 phút)
    * hoặc file games.json do GitHub Actions cập nhật mỗi 6 giờ (dataUrl, dự phòng).
    * Trong game nhớ bật hiện nhân vật trưng bày / chi tiết nhân vật trên hồ sơ.
-   * Wuthering Waves không có API công khai nên tự điền stats.
+   * Wuthering Waves: lấy stats (Union Level, nhân vật, ngày hoạt động, Sonance Casket...) từ
+   *   API Kuro qua Cloudflare Worker — cần cài thêm, xem cloudflare/README.md. Không thì tự điền.
    * - stats: [{ label: "Tên", value: "Giá trị" }] hiện thêm sau stats tự động
    * - characters: ["Tên nhân vật", ...] (dùng cho WuWa)
    * Xoá một game khỏi list để ẩn tab đó. Xoá hết để ẩn thẻ game.
@@ -107,13 +108,13 @@ window.PROFILE = {
         id: "wuwa",
         name: "Wuthering Waves",
         short: "WuWa",
-        uid: "",
-        server: "",         // ví dụ "Asia" / "SEA"
-        nickname: "",
-        level: "",          // Union Level
+        uid: "",            // để trống: Worker Kuro tự tìm tài khoản; điền nếu bạn có nhiều tài khoản
+        server: "",         // ví dụ "Asia" / "SEA" (chỉ để hiển thị)
+        nickname: "",       // để trống = lấy tên trong game từ Kuro
+        level: "",          // để trống = lấy Union Level từ Kuro
         maxLevel: "",       // Cấp tối đa, để vẽ thanh EXP (Genshin 60 và HSR 70 đã có sẵn)
-        stats: [],          // ví dụ [{ label: "Tháp Ảo Ảnh", value: "Tầng 4" }]
-        characters: [],     // ví dụ ["Camellya", "Jinhsi"]
+        stats: [],          // stats tự thêm, ví dụ [{ label: "Tháp Ảo Ảnh", value: "Tầng 4" }]
+        characters: [],     // nhân vật khoe thêm (Kuro không trả nhân vật), ví dụ ["Camellya", "Jinhsi"]
       },
       // nickname: tên trong game. Để trống = lấy từ Enka (tên Genshin hiện tại toàn ký tự vô hình nên không hiện)
       { id: "genshin", name: "Genshin Impact", short: "Genshin", uid: "815953629", server: "", nickname: "", stats: [] },
