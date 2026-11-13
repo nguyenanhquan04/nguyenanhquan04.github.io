@@ -100,7 +100,7 @@ window.PROFILE = {
    */
   games: {
     title: "Game tôi chơi",
-    liveUrl: "",            // Cloudflare Worker, ví dụ "https://stats.nguyenanhquan.tech/" (xem cloudflare/README.md)
+    liveUrl: "https://stats.nguyenanhquan.tech/", // Cloudflare Worker (xem cloudflare/README.md). Để "" để chỉ dùng games.json
     dataUrl: "https://raw.githubusercontent.com/nguyenanhquan04/nguyenanhquan04.github.io/main/assets/data/games.json",
     list: [
       {
