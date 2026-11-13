@@ -1809,15 +1809,29 @@
       tickTimers();
     }
 
+    // Sources in order: the live Cloudflare Worker (games.liveUrl), then games.json on GitHub,
+    // then the copy deployed with the site. A source must answer within a few seconds.
     async function loadData() {
-      for (const url of [gc.dataUrl, "assets/data/games.json"].filter(Boolean)) {
+      const sources = [
+        gc.liveUrl && { url: gc.liveUrl, cache: "default" },
+        gc.dataUrl && { url: gc.dataUrl, cache: "no-cache" },
+        { url: "assets/data/games.json", cache: "no-cache" },
+      ].filter(Boolean);
+      for (const src of sources) {
+        const ctl = typeof AbortController === "function" ? new AbortController() : null;
+        const timer = ctl && setTimeout(() => ctl.abort(), 6000);
         try {
-          const res = await fetch(url, { cache: "no-cache" });
+          const res = await fetch(src.url, { cache: src.cache, signal: ctl?.signal });
           if (!res.ok) continue;
-          data = await res.json();
+          const json = await res.json();
+          // the Worker can answer with only some games (e.g. Enka down and no cached copy yet)
+          if (!Object.keys(json).some((k) => FETCHED.has(k))) continue;
+          data = json;
           return true;
         } catch {
           /* try the next source */
+        } finally {
+          clearTimeout(timer);
         }
       }
       return false;

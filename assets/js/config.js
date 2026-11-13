@@ -89,8 +89,9 @@ window.PROFILE = {
   },
 
   /* ---------- Khung game ----------
-   * Genshin Impact và Honkai: Star Rail: chỉ cần điền UID. GitHub Actions lấy stats từ
-   * Enka.Network mỗi 6 giờ (cấp, thành tựu, La Hoàn, nhân vật trưng bày...).
+   * Genshin Impact và Honkai: Star Rail: chỉ cần điền UID. Stats (cấp, thành tựu, La Hoàn,
+   * nhân vật trưng bày...) lấy từ Enka.Network qua Cloudflare Worker (liveUrl, cập nhật ~10 phút)
+   * hoặc file games.json do GitHub Actions cập nhật mỗi 6 giờ (dataUrl, dự phòng).
    * Trong game nhớ bật hiện nhân vật trưng bày / chi tiết nhân vật trên hồ sơ.
    * Wuthering Waves không có API công khai nên tự điền stats.
    * - stats: [{ label: "Tên", value: "Giá trị" }] hiện thêm sau stats tự động
@@ -99,6 +100,7 @@ window.PROFILE = {
    */
   games: {
     title: "Game tôi chơi",
+    liveUrl: "",            // Cloudflare Worker, ví dụ "https://stats.nguyenanhquan.tech/" (xem cloudflare/README.md)
     dataUrl: "https://raw.githubusercontent.com/nguyenanhquan04/nguyenanhquan04.github.io/main/assets/data/games.json",
     list: [
       {

@@ -1,6 +1,7 @@
 # Updates assets/data/games.json (Genshin Impact + Honkai: Star Rail stats from Enka.Network)
-# every 6 hours, and whenever config.js changes. Wuthering Waves has no public API, so its
-# stats are typed into config.js by hand.
+# every 6 hours, and whenever config.js or the shared stats code changes. This is the fallback
+# for the live Cloudflare Worker (cloudflare/games-worker.mjs); both run the same code.
+# Wuthering Waves has no public API, so its stats are typed into config.js by hand.
 name: Update game stats
 
 on:
@@ -12,6 +13,7 @@ on:
     paths:
       - assets/js/config.js
       - scripts/fetch-games.mjs
+      - cloudflare/games-worker.mjs
 
 permissions:
   contents: write

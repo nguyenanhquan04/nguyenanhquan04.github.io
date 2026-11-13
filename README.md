@@ -26,7 +26,8 @@ assets/js/main.js     Logic: hiệu ứng, Discord (Lanyard), GitHub API
 assets/css/style.css  Giao diện
 assets/media/         Nơi để nhạc, video nền, ảnh
 assets/data/          games.json do GitHub Actions tạo (stats Genshin/HSR)
-scripts/              fetch-games.mjs: lấy stats game từ Enka.Network
+cloudflare/           games-worker.mjs: Cloudflare Worker trả stats game trực tiếp (xem cloudflare/README.md)
+scripts/              fetch-games.mjs: chạy cùng code Worker để ghi games.json (dự phòng)
 .github/workflows/    games.yml: chạy fetch-games.mjs mỗi 6 giờ
 .nojekyll             Báo GitHub Pages phục vụ file nguyên trạng
 ```
@@ -72,6 +73,8 @@ Mục nào để trống sẽ được ẩn. Đặt `page: false` để thẻ m�
 - `stats: [{ label, value }]` dùng được cho cả 3 game, hiện thêm sau stats tự động.
 
 Chạy tay: tab **Actions** → **Update game stats** → **Run workflow**.
+
+**Cập nhật gần như trực tiếp (khuyên dùng):** cài Cloudflare Worker trong `cloudflare/` theo hướng dẫn ở [`cloudflare/README.md`](cloudflare/README.md), rồi điền `games.liveUrl`. Trang sẽ đọc stats từ Worker (trễ tối đa ~10 phút). Nếu Worker không trả lời, trang dùng `games.json` làm dự phòng.
 
 ### Thêm bài vào playlist
 
