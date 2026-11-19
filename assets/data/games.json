@@ -1,12 +1,12 @@
 {
-  "updatedAt": "2026-11-12T07:06:02.348Z",
+  "updatedAt": "2026-11-19T20:50:05.258Z",
   "genshin": {
     "uid": "815953629",
     "nickname": "️️️️️️️",
     "signature": "Tích Nguyên Thạch Cho Skirk UwU",
     "level": 60,
     "worldLevel": 9,
-    "achievements": 1305,
+    "achievements": 1310,
     "abyss": "10-3",
     "theater": "",
     "friendship": 37,
@@ -103,9 +103,9 @@
     "signature": "Herta E2S1, Jingliu E6S1, Ruan Mei E1S1",
     "level": 70,
     "worldLevel": 6,
-    "achievements": 1196,
+    "achievements": 1223,
     "characterCount": 63,
-    "lightCones": 117,
+    "lightCones": 118,
     "universe": 9,
     "characters": [
       {
@@ -133,12 +133,12 @@
         "icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/character/1415.png"
       },
       {
-        "name": "Evernight",
+        "name": "Bronya",
         "level": 80,
         "rarity": 5,
-        "element": "Ice",
-        "eidolon": 0,
-        "icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/character/1413.png"
+        "element": "Wind",
+        "eidolon": 6,
+        "icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/character/1101.png"
       },
       {
         "name": "Robin",
